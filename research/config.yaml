@@ -6,14 +6,24 @@ plugin_version: "0bcd683"
 plugin_source: "local:/Users/wujiewang/code/git-evolve"
 
 metric:
-  name: "lcf_robust_heldout"
+  name: "lcf_judge_heldout"
   direction: maximize
   target: null                   # pass bar = METRIC > 0 with Wilcoxon p<0.05; no hard numeric target
-  min_relative_improvement: 0.01 # 0.01 LCF absolute improvement counted as significant
+  min_relative_improvement: 0.02 # 0.02 LCF absolute improvement counted as significant
 
 baselines:
-  random_search_30min: 0.02      # random params + pick best by train PG (to measure at init)
-  asal_sep_cma_es: 0.05          # ASAL baseline placeholder; to measure at campaign init and freeze
+  random_search_30min: 0.15      # random params; measure at init
+  asal_sep_cma_es: 0.30          # ASAL baseline placeholder; measure at init, freeze
+
+judge:
+  provider: anthropic
+  model: "claude-sonnet-4-6"     # pinned; judge upgrades bump eval-vN
+  temperature: 0.0
+  max_tokens: 256
+  runs_per_sample: 3             # median-of-3 for variance reduction
+  concurrency: 8                 # parallel API calls during scoring
+  secret_name: "anthropic-api-key"  # Modal secret name mounted into judge container
+  rubric_path: "research/eval/judge/rubric.md"
 
 eval:
   timeout: 2400                  # 40-min hard cap per orbit (30-min search + 30-s score + slack)

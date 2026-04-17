@@ -1,0 +1,39 @@
+# Cache (rebuildable, deletable)
+.re/cache/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Node
+node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code / plugins
+.omc/
+.claude/worktrees/
+
+# Worktrees (local, per-machine)
+.worktrees/
+
+# Research artifacts (binary, large)
+*.npy
+*.pt
+*.h5
+*.pkl
+*.ckpt
+*.safetensors
+
+# IDE
+.idea/
+.vscode/
+
+# Eval checkpoints (ephemeral, machine-local)
+.checkpoint
+
+# Lock files (optional — remove this line if you want uv.lock tracked)
+uv.lock

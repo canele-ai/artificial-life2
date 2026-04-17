@@ -3,16 +3,14 @@
 ## Modal secrets (available to evaluator.py via modal.Secret.from_name)
 
 Relevant (non-Supabase-preview):
-- `anthropic-api-key`       — ANTHROPIC_API_KEY
-- `openai-api-key`          — OPENAI_API_KEY
-- `canele-github`           — GitHub token (workspace)
-- `canele-secrets`          — workspace secret bag
-- `canele-eln-secrets`      — workspace secret bag
-- `adam-secrets`            — workspace secret bag
-- `mochi-secrets`           — workspace secret bag
-- `scimarket-secrets`       — workspace secret bag
+- **`anthropic-api-key`**       — ANTHROPIC_API_KEY (**REQUIRED by evaluator for judge**)
+- `openai-api-key`              — OPENAI_API_KEY (reserved for optional 2nd-judge ensembling)
+- `canele-github`               — GitHub token (workspace)
+- `canele-secrets`              — workspace secret bag
+- `canele-eln-secrets`          — workspace secret bag
+- `adam-secrets`, `mochi-secrets`, `scimarket-secrets` — workspace secrets (unused)
 
-No `huggingface` secret exists in the workspace — and none is needed (see below).
+No `huggingface` secret — and none is needed (HF weights for CLIP are public).
 
 ## Local shell env vars
 
@@ -23,42 +21,44 @@ No `huggingface` secret exists in the workspace — and none is needed (see belo
 - GOOGLE_API_KEY: missing
 - HF_TOKEN: missing
 
-## VLM / LLM provider recommendation
+Local shell vars are not used by the Modal evaluator. Kept for reference.
 
-**The frozen evaluator requires NO API credentials.** This campaign uses three
-locally-loaded vision foundation models (CLIP ViT-B/32, DINOv2-base,
-SigLIP-B/16), all downloadable from HuggingFace without authentication:
+## VLM / LLM provider — chosen approach
 
-- `openai/clip-vit-base-patch32`   (public)
-- `facebook/dinov2-base`            (public)
-- `google/siglip-base-patch16-224`  (public)
+### Judge (final scoring)
 
-Weights are pulled once into a persistent Modal Volume (`/cache/hf`) at
-campaign init and reused read-only by every orbit. No API calls, no usage
-fees, no rate limits.
+- **Provider:** Anthropic
+- **Model:** `claude-sonnet-4-6` (pinned; upgrades bump eval-vN)
+- **SDK:** `anthropic` Python SDK
+- **Secret mount:** `modal.Secret.from_name("anthropic-api-key")` into
+  judge container
+- **Container:** CPU-only (judge makes API calls, doesn't need GPU)
+- **Concurrency:** 8 parallel calls via `asyncio.gather`
+- **Rubric:** frozen in `research/eval/judge/rubric.md`, SHA-hashed at
+  evaluator startup
 
-**Orbit-side LLM use (optional, not required).** Some orbit search
-strategies (LLM-proposal-based MAP-Elites, tree-of-thought θ proposals) may
-want an LLM. Orbits that do are responsible for mounting their own Modal
-secret and declaring it in their container image. Recommended paths:
+### Search-time inner-loop signal (orbit's CLIP use)
 
-- `anthropic-api-key` Modal secret  → Anthropic SDK
-- `openai-api-key` Modal secret      → OpenAI SDK
-- Local OPENROUTER_API_KEY + mount  → OpenRouter (cheapest for bulk)
+- **Provider:** local (no API calls)
+- **Models:** CLIP ViT-B/32 (`openai/clip-vit-base-patch32`)
+- **SDK:** `transformers` `FlaxCLIPModel`
+- **Weights:** public HF download, cached in Modal Volume `hf-cache` at
+  `/cache/hf`
+- **Container:** A100 GPU, network egress to `api.anthropic.com` and
+  `api.openai.com` blocked (orbits cannot bypass the judge isolation)
 
-Evaluator does NOT require or mount any of these.
+### Previously considered, now dropped
 
-## Chosen approach
+- DINOv2 + SigLIP ensemble at scoring: dropped in favor of single-judge.
+  CLIP still available inside `search()` as the orbit's inner-loop proxy.
+- Temporal FMs (V-JEPA, VideoMAE, InternVideo2): deferred to campaign 2.
+- Prompt bank at scoring: dropped — rubric replaces it.
 
-- **Provider:** none (evaluator is self-contained; FMs are local).
-- **Modal image:** `jax[cuda12]`, `flax==0.10.2`, `transformers==4.47.1`,
-  `evosax==0.1.6`, `qdax==0.5.1`, `torch` (SigLIP PyTorch-subprocess path),
-  `pyyaml`, `imageio[ffmpeg]` (mp4 encoding).
-- **Secret mounts at eval time:** none.
-- **HF cache:** Modal Volume `hf-cache` mounted at `/cache/hf`, populated
-  once via bootstrap script.
-- **JAX JIT cache:** Modal Volume `jax-jit-cache` mounted at `/cache/jax`,
-  `JAX_COMPILATION_CACHE_DIR=/cache/jax` in container env.
+## Gate check
 
-Committed at Phase 2.0a; all Phase 2.2 eval-designer candidates should
-converge on this approach.
+- ✅ Anthropic Modal secret present: `anthropic-api-key`
+- ✅ CLIP weights pullable from HF without auth
+- ✅ Modal workspace has GPU access (A100 verified at Phase 0.6)
+- ✅ No gated-model dependencies
+- ⚠ Must populate `/cache/hf` with CLIP weights once at campaign
+  bootstrap (pre-Phase 2.5)
