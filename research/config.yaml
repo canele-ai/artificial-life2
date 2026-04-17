@@ -1,0 +1,52 @@
+# research/config.yaml — single file for all campaign config
+# Per-session overrides via RE_* env vars (e.g. RE_PARALLEL_AGENTS=2)
+
+# Plugin provenance — set by /init, updated by /sync
+plugin_version: "0bcd683"
+plugin_source: "local:/Users/wujiewang/code/git-evolve"
+
+metric:
+  name: "lcf_robust_heldout"
+  direction: maximize
+  target: null                   # pass bar = METRIC > 0 with Wilcoxon p<0.05; no hard numeric target
+  min_relative_improvement: 0.01 # 0.01 LCF absolute improvement counted as significant
+
+baselines:
+  random_search_30min: 0.02      # random params + pick best by train PG (to measure at init)
+  asal_sep_cma_es: 0.05          # ASAL baseline placeholder; to measure at campaign init and freeze
+
+eval:
+  timeout: 2400                  # 40-min hard cap per orbit (30-min search + 30-s score + slack)
+  seeds: 16                      # held-out test seeds; train uses another 16
+
+compute:
+  backend: modal
+  gpu: A100                      # 40GB default; plenty for 3 FMs + Flow-Lenia 128² + CMA-ES pop
+  cpu: 8
+  memory: 32768                  # 32 GB RAM (rollout tensors + FM forward + evosax population)
+  timeout: 3600                  # Modal hard container timeout (safety net above eval.timeout)
+
+execution:
+  parallel_agents: 1             # 1 agent per orbit (no cross-validation replicas)
+  parallel_orbits: 5             # 5 concurrent unconcluded orbits → peak 5 subagents
+  budget: null                   # unlimited (user: no compute budget limit)
+  max_orbits: 50
+  milestone_interval: 3
+  design_iterations: 1
+  brainstorm_debate_rounds: 2
+
+phases:
+  problem_refinement:
+    parallel_agents: 3           # already run — synthesis committed in problem_spec.md
+    enabled: true
+  eval_construction:
+    parallel_agents: 5           # 5 eval-designer candidates + 1 adversary per iter
+    design_iterations: 3         # up to 3 rounds, confidence-gated at 0.90
+
+agents:
+  orbit-agent:       { model: opus,   runtime: claude-code }
+  campaign-reviewer: { model: opus,   runtime: claude-code }
+  orbit-reviewer:    { model: sonnet, runtime: claude-code }
+  brainstorm-panel:  { model: opus,   runtime: claude-code }
+  debate-swarm:      { model: sonnet, runtime: claude-code }
+  problem-refiner:   { model: sonnet, runtime: claude-code }
