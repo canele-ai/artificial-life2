@@ -140,13 +140,14 @@ recomputed.
 
 ## Feasibility Assessment
 
-- **Estimated eval time per run:**
-  - `search()`: 30 min H100 (hard cap)
-  - Held-out scoring: 16 seeds × 10 prompts × 3 FMs × 256-step rollout + 5-frame embed
-    ≈ 480 embed ops × ~2s = ~16 min on H100
-  - **Total per orbit submission: ~45 min** (well under 4 h)
-- **Estimated eval cost per run:** ≈ 0.75 H100-hr per orbit. At ~$3/H100-hr
-  ≈ $2–3 per orbit.
+- **Estimated eval time per run (A100):**
+  - `search()`: 30 min A100 (hard cap, user-enforced)
+  - Held-out scoring: 16 test seeds × (1 rollout + 3-FM embed over 5 frames),
+    vmapped. ~5 s rollouts + ~5 s image embeds + ~1 s OT/PG arithmetic ≈ **~30 s**
+  - Container overhead + logging: ~60 s
+  - **Total per orbit submission: ~32 min**
+- **Estimated eval cost per run:** ≈ 0.55 A100-hr per orbit. At ~$1.50–2.00/A100-hr
+  ≈ **$0.75–1.00 per orbit**. Full 50-orbit campaign ≈ $40–50.
 - **Determinism strategy:**
   - `XLA_FLAGS=--xla_gpu_deterministic_ops=true`
   - `jax.config.update("jax_default_prng_impl", "threefry")`
@@ -163,6 +164,34 @@ recomputed.
 - **Circular eval risk:** none — FMs are frozen, never trained during campaign.
   Evaluator uses FMs, search may use `search_fm` but the two held-out FMs are
   process-isolated.
+
+## Disk Hygiene (enforced at evaluator level)
+
+Saving too many rollout tensors, GIFs, and orbit worktrees silently turns a
+50-orbit campaign into tens of GB of dead bytes. The evaluator enforces:
+
+- **Rollout tensors:** never saved raw. Only the best orbit's per-seed
+  rollouts are encoded as **mp4** (h.264 CRF 28, ~500 KB each) into
+  `research/eval/artifacts/{orbit_id}/rollout_s{i}.mp4`. Cap: 16 mp4s per
+  orbit. Non-leaderboard orbits keep only one teaser mp4.
+- **GIFs for the Campaign Issue / viz:** palette-reduced, frame-skipped to ≤
+  64 frames, ≤ 320×320, target ≤ 300 KB. Exactly 1 teaser GIF per orbit by
+  default; additional GIFs only for top-10 leaderboard orbits.
+- **Per-generation trace:** scalars only — `best_metric_per_gen`,
+  `mean_metric_per_gen`, generation timestamps. **No θ histories.** Final
+  `best_params` + archive (`<= 16` entries of `D<=100` floats) is the only
+  parameter artifact.
+- **FM weight cache:** persistent Modal Volume mounted read-only at
+  `/cache/hf`. Weights downloaded once, reused across orbits. Never written
+  to the repo or orbit worktree.
+- **JAX JIT cache:** `JAX_COMPILATION_CACHE_DIR=/cache/jax` (Modal Volume).
+  Local dev fallback: `~/.cache/jax` capped at 2 GB (evaluator emits a
+  warning past 2 GB).
+- **Orbit worktree lifecycle:** on merge to main or on `label:dead-end`,
+  worktree is `git worktree remove --force` and branch deleted. Only
+  `label:winner` worktrees are retained.
+- **Artifact budget per orbit: ~10 MB** (mp4s + 1 GIF + scalar traces +
+  best_params JSON).
 
 ## Novelty Operationalization
 
