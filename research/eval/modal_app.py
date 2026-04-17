@@ -81,7 +81,7 @@ judge_image = (
 # (Comments above about "repo bind-mount" were aspirational — Modal requires an
 # explicit include. Doing this here keeps evaluator.py importable from both
 # container functions without duplicating code.)
-search_image = search_image.add_local_python_source("evaluator")
+search_image = search_image.add_local_python_source("evaluator", "search_worker")
 judge_image = judge_image.add_local_python_source("evaluator")
 
 # ── App ───────────────────────────────────────────────────────────────────────
@@ -137,7 +137,6 @@ def search_container(
 
     # Import helpers from evaluator (same package, available in image).
     from evaluator import (
-        _SEARCH_WORKER_CODE,
         _rollout_and_render,
         _sanitise_strip,
         _env_audit,
@@ -145,16 +144,14 @@ def search_container(
         N_TEST_SEEDS,
         TEST_SEED_OFFSET,
     )
+    import search_worker  # packaged alongside evaluator in the image
 
     # Write solution to tmp path
     sol_dir = tempfile.mkdtemp(prefix="sol_")
     sol_file = Path(sol_dir) / "solution.py"
     sol_file.write_text(solution_code)
 
-    # Write search worker
-    wd = tempfile.mkdtemp(prefix="worker_")
-    worker_file = Path(wd) / "search_worker.py"
-    worker_file.write_text(_SEARCH_WORKER_CODE)
+    worker_file = Path(search_worker.__file__)
 
     fd, out_path = tempfile.mkstemp(suffix=".npy")
     os.close(fd)

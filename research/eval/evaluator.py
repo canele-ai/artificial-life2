@@ -660,6 +660,8 @@ def main() -> int:
             log.info("dispatching judge (%d×%d)…",len(strips),JUDGE_RUNS_PER_SAMPLE)
             s2=modal_judge_fn.remote(strips_png=strips)
     except Exception as exc:
+        import traceback as _tb
+        _tb.print_exc()
         _emit(-math.inf,{"status":"modal_dispatch_error","reason":repr(exc)[:400],
                          "eval_version":EVAL_VERSION}); return 5
 

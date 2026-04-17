@@ -8,47 +8,52 @@ and also checkpoints to /tmp/ckpt/<run_id>_best.npy for timeout recovery.
 Parent evaluator.py SIGKILLs this process at 1800 s if it has not exited.
 """
 
-import importlib.util
-import os
-import sys
-from pathlib import Path
 
-import numpy as np
+def _main() -> None:
+    import importlib.util
+    import os
+    import sys
+    from pathlib import Path
 
-solution_path = sys.argv[1]
-output_path   = sys.argv[2]
-substrate     = sys.argv[3]
-seed          = int(sys.argv[4])
-run_id        = sys.argv[5]
+    import numpy as np
 
-os.environ.setdefault("JAX_COMPILATION_CACHE_DIR", "/cache/jax")
-os.environ.setdefault("HF_HOME", "/cache/hf")
-os.environ.setdefault("TRANSFORMERS_CACHE", "/cache/hf")
+    solution_path = sys.argv[1]
+    output_path   = sys.argv[2]
+    substrate     = sys.argv[3]
+    seed          = int(sys.argv[4])
+    run_id        = sys.argv[5]
 
-spec = importlib.util.spec_from_file_location("solution", solution_path)
-mod  = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(mod)
+    os.environ.setdefault("JAX_COMPILATION_CACHE_DIR", "/cache/jax")
+    os.environ.setdefault("HF_HOME", "/cache/hf")
+    os.environ.setdefault("TRANSFORMERS_CACHE", "/cache/hf")
 
-import jax
-import jax.numpy as jnp
+    spec = importlib.util.spec_from_file_location("solution", solution_path)
+    mod  = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
 
-train_seeds = jnp.arange(16) + 1000
-rng = jax.random.PRNGKey(seed)
+    import jax
+    import jax.numpy as jnp
 
-result = mod.search(
-    substrate_name=substrate,
-    seed_pool_train=train_seeds,
-    budget={"wall_clock_s": 1800},
-    rng=rng,
-)
+    train_seeds = jnp.arange(16) + 1000
+    rng = jax.random.PRNGKey(seed)
 
-best = result["best_params"]
-arr  = np.asarray(best, dtype=np.float32)
-np.save(output_path, arr)
+    result = mod.search(
+        substrate_name=substrate,
+        seed_pool_train=train_seeds,
+        budget={"wall_clock_s": 1800},
+        rng=rng,
+    )
 
-# Checkpoint for timeout recovery.
-ckpt = Path(f"/tmp/ckpt/{run_id}_best.npy")
-ckpt.parent.mkdir(parents=True, exist_ok=True)
-np.save(str(ckpt), arr)
+    best = result["best_params"]
+    arr  = np.asarray(best, dtype=np.float32)
+    np.save(output_path, arr)
 
-print(f"SEARCH_OK output={output_path}", flush=True)
+    ckpt = Path(f"/tmp/ckpt/{run_id}_best.npy")
+    ckpt.parent.mkdir(parents=True, exist_ok=True)
+    np.save(str(ckpt), arr)
+
+    print(f"SEARCH_OK output={output_path}", flush=True)
+
+
+if __name__ == "__main__":
+    _main()

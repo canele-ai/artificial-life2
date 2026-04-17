@@ -1,0 +1,7 @@
+{
+  "lcf_judge": 0.0,
+  "per_seed_tier_scalars": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+  "asal_commit_sha": "PLACEHOLDER_BEFORE_STEP_2_5_BASELINE_FREEZE",
+  "eval_version": "eval-v1",
+  "note": "Zero-anchor placeholder for canary runs. Replaced by real ASAL Sep-CMA-ES baseline at Step 2.5 freeze; BASELINE_SHA256 pinned in evaluator.py at that time."
+}
