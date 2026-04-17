@@ -29,7 +29,7 @@ _PILLOW_VER = "10.4.0"
 _TRANSFORMERS_VER = "4.47.1"
 _FLAX_VER = "0.10.2"
 _SCIPY_VER = "1.13.1"
-_ANTHROPIC_VER = "0.39.0"
+_ANTHROPIC_VER = "0.96.0"
 
 # ── Modal Volumes (pre-populated at campaign bootstrap) ──────────────────────
 hf_cache_vol = modal.Volume.from_name("hf-cache", create_if_missing=True)
@@ -76,6 +76,13 @@ judge_image = (
         f"numpy=={_NUMPY_VER}",
     )
 )
+
+# Make evaluator.py available inside both containers.
+# (Comments above about "repo bind-mount" were aspirational — Modal requires an
+# explicit include. Doing this here keeps evaluator.py importable from both
+# container functions without duplicating code.)
+search_image = search_image.add_local_python_source("evaluator")
+judge_image = judge_image.add_local_python_source("evaluator")
 
 # ── App ───────────────────────────────────────────────────────────────────────
 app = modal.App("eval-lcf-judge-v1")

@@ -293,16 +293,15 @@ async def _run_all_judge_calls(strips_png: list[bytes]) -> tuple[list,int]:
     sem=asyncio.Semaphore(JUDGE_CONCURRENCY)
     meta=[(si,k) for si in range(len(strips_png)) for k in range(JUDGE_RUNS_PER_SAMPLE)]
     coros=[_judge_one_call(client,sem,strips_png[si]) for si,_ in meta]
+    results=await asyncio.gather(*coros, return_exceptions=True)
     per_strip=[[None]*JUDGE_RUNS_PER_SAMPLE for _ in strips_png]
     parse_failures=0
-    futs={asyncio.ensure_future(c):i for i,c in enumerate(coros)}
-    for fut in asyncio.as_completed(list(futs)):
-        idx=futs[fut]
+    for idx,res in enumerate(results):
         si,k=meta[idx]
-        try: result=await fut
-        except Exception: result=None
-        per_strip[si][k]=result
-        if result is None: parse_failures+=1
+        if isinstance(res,BaseException) or res is None:
+            per_strip[si][k]=None; parse_failures+=1
+        else:
+            per_strip[si][k]=res
     return per_strip, parse_failures
 
 
