@@ -34,7 +34,8 @@ _DIM = {"lenia": 8, "flow_lenia": 8}
 # CMA-ES hyper-parameters (ASAL defaults).
 _POP_SIZE = 16
 _SIGMA_INIT = 0.1
-_N_GENERATIONS = 200   # will be cut short by wall-clock cap
+_N_GENERATIONS = 60    # 200 OOMs the A100 container at 30-min budget
+_CLEAR_CACHE_EVERY = 10
 
 
 # Module-level CLIP cache — prevents OOM on long searches (loading CLIP per
@@ -145,6 +146,11 @@ def search(
                 archive.append(best_params)
 
             best_proxy_per_gen.append(best_score)
+
+            if (gen + 1) % _CLEAR_CACHE_EVERY == 0:
+                import gc
+                gc.collect()
+                jax.clear_caches()
 
     except ImportError:
         # evosax not installed — fall back to random search.
