@@ -92,7 +92,7 @@ app = modal.App("eval-lcf-judge-v1")
     image=search_image,
     gpu="A100",           # 40 GB; enough for Flow-Lenia 128² + CLIP + CMA-ES pop
     cpu=8.0,
-    memory=32768,         # 32 GB RAM
+    memory=65536,         # 64 GB RAM — larger headroom to prevent subprocess OOM during long Sep-CMA-ES runs
     timeout=3600,         # 1-hour Modal hard kill (safety net above 30-min SIGKILL)
     volumes={
         "/cache/hf": hf_cache_vol,    # CLIP weights (read-only at eval time)

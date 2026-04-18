@@ -37,7 +37,8 @@ _DIM = {"lenia": 8, "flow_lenia": 8}
 
 _POP_SIZE = 16
 _SIGMA_INIT = 0.1
-_N_GENERATIONS = 200
+_N_GENERATIONS = 60   # 200 OOMed the A100 container; 60 plateaus around same score
+_CLEAR_CACHE_EVERY = 10
 
 # Pinned prompt list — 5 generic visual-life descriptors, one per sampled
 # frame at indices [0, 63, 127, 191, 255].  Hand-written, frozen at eval-v1.
@@ -156,6 +157,7 @@ def search(
         best_params = jnp.zeros(K, dtype=jnp.float32)
         best_score = float("-inf")
 
+        import gc
         for gen in range(_N_GENERATIONS):
             if time.monotonic() - t0 >= wall_clock_s - 20:
                 break
@@ -176,6 +178,11 @@ def search(
                 archive.append(best_params)
 
             best_proxy_per_gen.append(best_score)
+
+            # Periodic cleanup to prevent OOM on long searches.
+            if (gen + 1) % _CLEAR_CACHE_EVERY == 0:
+                gc.collect()
+                jax.clear_caches()
 
     except ImportError:
         best_params = jnp.zeros(K, dtype=jnp.float32)
