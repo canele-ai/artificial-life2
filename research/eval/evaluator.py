@@ -600,6 +600,9 @@ def main() -> int:
     ap.add_argument("--substrate",required=True,choices=["lenia","flow_lenia"])
     ap.add_argument("--seed",type=int,default=0,help="Master seed for search()")
     ap.add_argument("--run-id",default=None)
+    ap.add_argument("--search-budget-s",type=int,default=1800,
+                    help="Override wall-clock budget for search() (default 1800=30min). "
+                         "For quick-canary runs only; real orbits always use 1800.")
     ap.add_argument("--local-dry-run",action="store_true",
                     help="Skip Modal; emit sentinel metric (smoke test only).")
     args=ap.parse_args()
@@ -641,6 +644,7 @@ def main() -> int:
                 solution_code=solution_code, substrate_name=args.substrate,
                 seed=args.seed, run_id=run_id,
                 baseline_lcf_scalar=lcf_baseline,
+                search_budget_s=args.search_budget_s,
             )
             s1_status=s1.get("status","unknown")
             env_audit=s1.get("env_audit",{})
@@ -649,6 +653,7 @@ def main() -> int:
             if s1_status not in ("ok","search_timeout") or not strips:
                 _emit(-math.inf if s1_status=="non_finite_params" else 0.,{
                     "status":s1_status,"reason":s1.get("reason",""),
+                    "stderr_tail":s1.get("stderr_tail",""),
                     "env_audit":env_audit,"rubric_sha":RUBRIC_SHA256,
                     "eval_version":EVAL_VERSION}); return 0
 

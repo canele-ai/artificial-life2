@@ -108,6 +108,7 @@ def search_container(
     seed: int,
     run_id: str,
     baseline_lcf_scalar: float,
+    search_budget_s: int = 1800,
 ) -> dict:
     """Run orbit search() + substrate rollout on A100.
 
@@ -134,6 +135,7 @@ def search_container(
     import numpy as np
 
     os.environ["ASAL_BASELINE_LCF"] = str(baseline_lcf_scalar)
+    os.environ["RE_SEARCH_WALL_CLOCK_S"] = str(int(search_budget_s))
 
     # Import helpers from evaluator (same package, available in image).
     from evaluator import (
@@ -163,10 +165,13 @@ def search_container(
 
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     search_status = "ok"
+    stderr_tail = ""
     try:
         _stdout, _stderr = proc.communicate(timeout=SEARCH_WALL_CLOCK_S)
         if proc.returncode != 0:
             search_status = "search_crash"
+            try: stderr_tail = _stderr.decode("utf-8", errors="replace")[-800:]
+            except Exception: stderr_tail = "<stderr decode failed>"
     except subprocess.TimeoutExpired:
         proc.send_signal(signal.SIGKILL)
         proc.communicate()
@@ -198,7 +203,8 @@ def search_container(
     env = _env_audit()
 
     if best_params is None:
-        return {"status": search_status, "strips": [], "env_audit": env}
+        return {"status": search_status, "strips": [], "env_audit": env,
+                "stderr_tail": stderr_tail}
 
     # Guard 8: explicit finiteness guard before rollout
     if not np.all(np.isfinite(best_params)):

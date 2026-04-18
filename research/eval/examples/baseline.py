@@ -77,7 +77,7 @@ def _clip_proxy(params: jax.Array, seed: int) -> float:
     except Exception:
         # Fallback: random proxy (uniform in [-1, 1]) if CLIP unavailable.
         import numpy as np
-        rng = np.random.default_rng(int(jnp.sum(params * 1000).astype(int)) ^ seed)
+        rng = np.random.default_rng((abs(int(jnp.sum(params * 1000).astype(int))) ^ int(seed)) & 0xFFFFFFFF)
         return float(rng.uniform(-0.2, 0.2))
 
 

@@ -30,9 +30,13 @@ def search(
     for all seeds → LCF_theta ≈ 0 → METRIC ≈ -baseline ≈ -0.30.
     """
     K = _DIM.get(substrate_name, 8)
-    best_params = jnp.zeros(K, dtype=jnp.float32)
+    # Return NaN params — the evaluator's Guard 8 finite-check zeros every
+    # seed's tier_scalar and marks status=non_finite_params. This makes
+    # trivial_bad the true floor across *any* substrate, rather than relying
+    # on substrate-specific "dead" parameter interpretations.
+    best_params = jnp.full(K, jnp.nan, dtype=jnp.float32)
     return {
         "best_params": best_params,
-        "archive": jnp.zeros((1, K), dtype=jnp.float32),
-        "search_trace": {"best_proxy_per_gen": [0.0], "note": "trivial_zero"},
+        "archive": jnp.full((1, K), jnp.nan, dtype=jnp.float32),
+        "search_trace": {"best_proxy_per_gen": [0.0], "note": "trivial_nan_floor"},
     }

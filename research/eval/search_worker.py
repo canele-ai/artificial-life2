@@ -37,10 +37,11 @@ def _main() -> None:
     train_seeds = jnp.arange(16) + 1000
     rng = jax.random.PRNGKey(seed)
 
+    budget_s = int(os.environ.get("RE_SEARCH_WALL_CLOCK_S", "1800"))
     result = mod.search(
         substrate_name=substrate,
         seed_pool_train=train_seeds,
-        budget={"wall_clock_s": 1800},
+        budget={"wall_clock_s": budget_s},
         rng=rng,
     )
 
