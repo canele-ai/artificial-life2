@@ -84,8 +84,7 @@ UNIFORM_TIER_RANGE_MIN = 0.02
 RUBRIC_SHA256 = "9f2945d70ee3259d8f4a513105b54e0a55cc9dffba88a349aa3087a0ec9ad460"
 
 # Guard 10 — baseline SHA; None until campaign freeze at Phase 2.5.
-BASELINE_SHA256: str | None = None
-
+BASELINE_SHA256: str | None = "15c5b5d051832e6dd485b5ff6a9d93dd13bd9d324034c94bfa5f8384b8f3bd7f"
 # Guard 1 — rubric system prompt EMBEDDED (never read from repo in search container).
 RUBRIC_SYSTEM_PROMPT = (
     "You are a strict scientific rater evaluating artificial-life simulations.\n"

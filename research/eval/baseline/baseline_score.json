@@ -1,7 +1,34 @@
 {
-  "lcf_judge": 0.0,
-  "per_seed_tier_scalars": [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-  "asal_commit_sha": "PLACEHOLDER_BEFORE_STEP_2_5_BASELINE_FREEZE",
+  "asal_commit_sha": "reimplemented_from_arxiv_2412.17799_asal_metrics.calc_supervised_target_score; sep_cma_es(popsize=16,sigma=0.1,gens=200); PRNGKey(0); prompts=pinned_in_asal_baseline.py",
   "eval_version": "eval-v1",
-  "note": "Zero-anchor placeholder for canary runs. Replaced by real ASAL Sep-CMA-ES baseline at Step 2.5 freeze; BASELINE_SHA256 pinned in evaluator.py at that time."
+  "judge_version": "claude-sonnet-4-6",
+  "lcf_judge": 0.1185158226544496,
+  "per_seed_tier_scalars": [
+    0.14962778697388449,
+    0.06842554289186317,
+    0.14962778697388449,
+    0.12457309396155178,
+    0.13509600385206136,
+    0.06842554289186317,
+    0.06842554289186317,
+    0.06842554289186317,
+    0.12457309396155178,
+    0.14962778697388449,
+    0.13509600385206136,
+    0.14962778697388449,
+    0.12457309396155178,
+    0.14309690811052558,
+    0.14962778697388449,
+    0.06842554289186317
+  ],
+  "per_tier_median": {
+    "agency": 0.1,
+    "coherence": 0.2,
+    "existence": 0.3,
+    "reproduction": 0.05,
+    "robustness": 0.125
+  },
+  "rubric_sha": "9f2945d70ee3259d8f4a513105b54e0a55cc9dffba88a349aa3087a0ec9ad460",
+  "substrate": "lenia",
+  "wall_clock_s": 233.7
 }
