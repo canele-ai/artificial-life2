@@ -1,0 +1,11 @@
+{
+  "campaign": {
+    "title": "Life-cycle fidelity under VLM judge (improving on ASAL)",
+    "problem": "Discover simulation parameters in Lenia and Flow-Lenia whose rollouts score highest under a multimodal-LLM rubric covering 5 tiers of life-like behavior (existence, agency, robustness, reproduction, coherence), judged by Claude Sonnet 4.6 on 16 held-out seeds against a pinned baseline.",
+    "eval_version": "eval-v1",
+    "repo": "canele-ai/artificial-life2",
+    "best": { "orbit": null, "metric": 0.1185, "direction": "max" },
+    "timeline": []
+  },
+  "orbits": []
+}
