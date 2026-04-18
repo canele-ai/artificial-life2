@@ -37,6 +37,11 @@ _SIGMA_INIT = 0.1
 _N_GENERATIONS = 200   # will be cut short by wall-clock cap
 
 
+# Module-level CLIP cache — prevents OOM on long searches (loading CLIP per
+# generation leaks memory and kills the container after ~20 gens).
+_CLIP_CACHE: dict = {}
+
+
 def _clip_oe_score(params_batch: jax.Array, seed: int) -> jax.Array:
     """CLIP open-endedness score for a batch of params [pop, K].
 
@@ -44,17 +49,18 @@ def _clip_oe_score(params_batch: jax.Array, seed: int) -> jax.Array:
     Falls back to random proxy if CLIP unavailable.
     """
     try:
-        from transformers import FlaxCLIPModel, CLIPProcessor
         import numpy as np
 
-        processor = CLIPProcessor.from_pretrained(
-            "openai/clip-vit-base-patch32",
-            cache_dir="/cache/hf",
-        )
-        model = FlaxCLIPModel.from_pretrained(
-            "openai/clip-vit-base-patch32",
-            cache_dir="/cache/hf",
-        )
+        if "model" not in _CLIP_CACHE:
+            from transformers import FlaxCLIPModel, CLIPProcessor
+            _CLIP_CACHE["processor"] = CLIPProcessor.from_pretrained(
+                "openai/clip-vit-base-patch32", cache_dir="/cache/hf",
+            )
+            _CLIP_CACHE["model"] = FlaxCLIPModel.from_pretrained(
+                "openai/clip-vit-base-patch32", cache_dir="/cache/hf",
+            )
+        processor = _CLIP_CACHE["processor"]
+        model     = _CLIP_CACHE["model"]
         from evaluator import _lenia_rollout, _render_lenia
         from PIL import Image as PILImage
 

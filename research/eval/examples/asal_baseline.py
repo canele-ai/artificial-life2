@@ -49,6 +49,29 @@ _BASELINE_PROMPTS: list[str] = [
     "two separate cells",
 ]
 
+# Module-level CLIP cache — loading FlaxCLIPModel on every call leaks memory
+# and OOM-kills the container after ~20 generations. Lazy-init once per
+# subprocess (subprocess is killed + reborn per orbit, so still fresh).
+_CLIP_CACHE: dict = {}
+
+
+def _get_clip():
+    if "model" not in _CLIP_CACHE:
+        from transformers import FlaxCLIPModel, CLIPProcessor
+        _CLIP_CACHE["processor"] = CLIPProcessor.from_pretrained(
+            "openai/clip-vit-base-patch32", cache_dir="/cache/hf",
+        )
+        _CLIP_CACHE["model"] = FlaxCLIPModel.from_pretrained(
+            "openai/clip-vit-base-patch32", cache_dir="/cache/hf",
+        )
+        txt_inputs = _CLIP_CACHE["processor"](
+            text=_BASELINE_PROMPTS, return_tensors="jax", padding=True,
+        )
+        z_txt = _CLIP_CACHE["model"].get_text_features(**txt_inputs)
+        z_txt = z_txt / (jnp.linalg.norm(z_txt, axis=-1, keepdims=True) + 1e-8)
+        _CLIP_CACHE["z_txt"] = z_txt
+    return _CLIP_CACHE["processor"], _CLIP_CACHE["model"], _CLIP_CACHE["z_txt"]
+
 
 def _supervised_target_score(params_batch: jax.Array, seed: int) -> jax.Array:
     """ASAL supervised-target score — mean cosine(frame_t, prompt_t) per θ.
@@ -57,22 +80,11 @@ def _supervised_target_score(params_batch: jax.Array, seed: int) -> jax.Array:
     Falls back to random proxy if CLIP unavailable (never expected on Modal).
     """
     try:
-        from transformers import FlaxCLIPModel, CLIPProcessor
         from evaluator import _lenia_rollout, _flow_lenia_rollout, _render_lenia, _render_flow_lenia
         from PIL import Image as PILImage
         import numpy as np
 
-        processor = CLIPProcessor.from_pretrained(
-            "openai/clip-vit-base-patch32", cache_dir="/cache/hf",
-        )
-        model = FlaxCLIPModel.from_pretrained(
-            "openai/clip-vit-base-patch32", cache_dir="/cache/hf",
-        )
-
-        # Cache text embeddings — constant across the whole search.
-        txt_inputs = processor(text=_BASELINE_PROMPTS, return_tensors="jax", padding=True)
-        z_txt = model.get_text_features(**txt_inputs)              # [5, d]
-        z_txt = z_txt / (jnp.linalg.norm(z_txt, axis=-1, keepdims=True) + 1e-8)
+        processor, model, z_txt = _get_clip()
 
         scores = []
         for i in range(params_batch.shape[0]):

@@ -33,6 +33,9 @@ _DIM = {"lenia": 8, "flow_lenia": 8}
 _PARAM_LO = jnp.array([-1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0, -1.0], dtype=jnp.float32)
 _PARAM_HI = jnp.array([ 1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0,  1.0], dtype=jnp.float32)
 
+# Module-level CLIP cache — prevents OOM on long searches.
+_CLIP_CACHE: dict = {}
+
 
 def _clip_proxy(params: jax.Array, seed: int) -> float:
     """Cheap CLIP open-endedness proxy as inner-loop fitness.
@@ -42,18 +45,18 @@ def _clip_proxy(params: jax.Array, seed: int) -> float:
     Falls back to a random proxy if CLIP weights are unavailable.
     """
     try:
-        from transformers import FlaxCLIPModel, CLIPProcessor
         import numpy as np
 
-        # Load CLIP (cached from /cache/hf after bootstrap).
-        processor = CLIPProcessor.from_pretrained(
-            "openai/clip-vit-base-patch32",
-            cache_dir="/cache/hf",
-        )
-        model = FlaxCLIPModel.from_pretrained(
-            "openai/clip-vit-base-patch32",
-            cache_dir="/cache/hf",
-        )
+        if "model" not in _CLIP_CACHE:
+            from transformers import FlaxCLIPModel, CLIPProcessor
+            _CLIP_CACHE["processor"] = CLIPProcessor.from_pretrained(
+                "openai/clip-vit-base-patch32", cache_dir="/cache/hf",
+            )
+            _CLIP_CACHE["model"] = FlaxCLIPModel.from_pretrained(
+                "openai/clip-vit-base-patch32", cache_dir="/cache/hf",
+            )
+        processor = _CLIP_CACHE["processor"]
+        model     = _CLIP_CACHE["model"]
 
         # Short rollout for speed (32 steps, 4 frames).
         from evaluator import _lenia_rollout, _render_lenia
