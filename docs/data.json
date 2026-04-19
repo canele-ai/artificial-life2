@@ -27,8 +27,8 @@
     },
     "teaser_image": "https://raw.githubusercontent.com/canele-ai/artificial-life2/main/research/figures/teaser.png",
     "best": {
-      "orbit": "07-real-cmaes-dinov2",
-      "metric": 0.319044,
+      "orbit": "15-flow-lenia-retry",
+      "metric": 0.339329,
       "direction": "maximize"
     },
     "timeline": []
@@ -445,16 +445,23 @@
     },
     {
       "name": "11-cmaes-dinov2-pop64-restarts",
-      "status": "pending",
+      "status": "evaluated",
       "strategy": "11-cmaes-dinov2-pop64-restarts: EXTEND orbit 07: pop=64 real Sep-CMA-ES + DINOv2-lite (QR-orthogonal) + 3-restart sigma schedule \u2014 scaling study for CMA-ES lift",
-      "metric": null,
+      "metric": 0.246805,
       "issue": 12,
       "parents": [
         "07-real-cmaes-dinov2"
       ],
       "log_url": "https://github.com/canele-ai/artificial-life2/blob/orbit/11-cmaes-dinov2-pop64-restarts/orbits/11-cmaes-dinov2-pop64-restarts/log.md",
       "figures": [],
-      "issue_comments": [],
+      "issue_comments": [
+        {
+          "author": "wwang2",
+          "date": "2026-04-19",
+          "body": "<!-- RE:EVAL orbit=11-cmaes-dinov2-pop64-restarts eval_version=eval-v2 -->\n## Eval Check (batch 3, seed 1, eval-v2)\n**Result:** VERIFIED but BELOW orbit 07 (+0.319) \u2014 restart schedule hurt, not helped\n**Measured:** 0.246805\n**Wall clock:** 1526.1s\n**Evaluator:** eval-v2 + infra fix (commit 08e6131)\n**Baseline anchor:** LCF_judge=0.1185 (HONEST_ANCHOR)\n\n**Branch:** [orbit/11-cmaes-dinov2-pop64-restarts](https://github.com/canele-ai/artificial-life2/tree/orbit/11-cmaes-dinov2-pop64-restarts)\n**Solution:** [solution.py](https://github.com/canele-ai/artificial-life2/blob/orbit/11-cmaes-dinov2-pop64-restarts/orbits/11-cmaes-dinov2-pop64-restarts/solution.py)",
+          "images": []
+        }
+      ],
       "eval_version": "eval-v2"
     },
     {
@@ -501,30 +508,44 @@
     },
     {
       "name": "14-cmaes-dinov2-pop128",
-      "status": "pending",
+      "status": "evaluated",
       "strategy": "14-cmaes-dinov2-pop128: EXTEND orbit 07: pop=128 + 4-restart CMA-ES + DINOv2-lite \u2014 stretch-compute ceiling for this family",
-      "metric": null,
+      "metric": 0.325451,
       "issue": 15,
       "parents": [
         "07-real-cmaes-dinov2"
       ],
       "log_url": "https://github.com/canele-ai/artificial-life2/blob/orbit/14-cmaes-dinov2-pop128/orbits/14-cmaes-dinov2-pop128/log.md",
       "figures": [],
-      "issue_comments": [],
+      "issue_comments": [
+        {
+          "author": "wwang2",
+          "date": "2026-04-19",
+          "body": "<!-- RE:EVAL orbit=14-cmaes-dinov2-pop128 eval_version=eval-v2 -->\n## Eval Check (batch 3, seed 1, eval-v2)\n**Result:** VERIFIED marginal gain over orbit 07 (+0.006) \u2014 pop=128 plateau\n**Measured:** 0.325451\n**Wall clock:** 1565.5s\n**Evaluator:** eval-v2 + infra fix (commit 08e6131)\n**Baseline anchor:** LCF_judge=0.1185 (HONEST_ANCHOR)\n\n**Branch:** [orbit/14-cmaes-dinov2-pop128](https://github.com/canele-ai/artificial-life2/tree/orbit/14-cmaes-dinov2-pop128)\n**Solution:** [solution.py](https://github.com/canele-ai/artificial-life2/blob/orbit/14-cmaes-dinov2-pop128/orbits/14-cmaes-dinov2-pop128/solution.py)",
+          "images": []
+        }
+      ],
       "eval_version": "eval-v2"
     },
     {
       "name": "15-flow-lenia-retry",
-      "status": "pending",
+      "status": "evaluated",
       "strategy": "15-flow-lenia-retry: RE-RUN orbit 09 under eval-v2 + infra fix (commit 08e6131 drops block_network=True) \u2014 Flow-Lenia + real Sep-CMA-ES + CLIP-OE, was blocked by CLIP cache crash",
-      "metric": null,
+      "metric": 0.339329,
       "issue": 16,
       "parents": [
         "09-flow-lenia-real-cmaes"
       ],
       "log_url": "https://github.com/canele-ai/artificial-life2/blob/orbit/15-flow-lenia-retry/orbits/15-flow-lenia-retry/log.md",
       "figures": [],
-      "issue_comments": [],
+      "issue_comments": [
+        {
+          "author": "wwang2",
+          "date": "2026-04-19",
+          "body": "<!-- RE:EVAL orbit=15-flow-lenia-retry eval_version=eval-v2 -->\n## Eval Check (batch 3, seed 1, eval-v2)\n**Result:** VERIFIED NEW LEADER \u2014 Flow-Lenia substrate beats Lenia by +0.020 over orbit 07 (axis-1 substrate gap hypothesis validated)\n**Measured:** 0.339329\n**Wall clock:** 1594.9s\n**Evaluator:** eval-v2 + infra fix (commit 08e6131)\n**Baseline anchor:** LCF_judge=0.1185 (HONEST_ANCHOR)\n\n**Branch:** [orbit/15-flow-lenia-retry](https://github.com/canele-ai/artificial-life2/tree/orbit/15-flow-lenia-retry)\n**Solution:** [solution.py](https://github.com/canele-ai/artificial-life2/blob/orbit/15-flow-lenia-retry/orbits/15-flow-lenia-retry/solution.py)",
+          "images": []
+        }
+      ],
       "eval_version": "eval-v2"
     }
   ]
