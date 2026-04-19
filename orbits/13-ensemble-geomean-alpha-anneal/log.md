@@ -2,7 +2,7 @@
 issue: 14
 parents: [10-ensemble-clip-dinov2]
 eval_version: eval-v2
-metric: null
+metric: 0.012132
 ---
 
 # Research Notes — orbit 13: geomean ensemble + α-anneal
