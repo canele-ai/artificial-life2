@@ -439,6 +439,12 @@
           "date": "2026-04-19",
           "body": "<!-- RE:EVAL orbit=10-ensemble-clip-dinov2 eval_version=eval-v2 -->\n## Eval Check (batch 2, seed 1, eval-v2)\n**Result:** VERIFIED (below baseline \u2014 ensemble CLIP+DINOv2 is WORSE than individual FMs; FMs are redundant for this substrate, not complementary)\n**Measured:** 0.080433\n**Wall clock:** 1564.7s\n**Evaluator:** eval-v2 (evosax present in Modal image, env_audit tracks evosax_version)\n**Baseline anchor:** HONEST_ANCHOR LCF_judge=0.1185 (random-search + CLIP-OE)\n\n**Branch:** [orbit/10-ensemble-clip-dinov2](https://github.com/canele-ai/artificial-life2/tree/orbit/10-ensemble-clip-dinov2)\n**Solution:** [solution.py](https://github.com/canele-ai/artificial-life2/blob/orbit/10-ensemble-clip-dinov2/orbits/10-ensemble-clip-dinov2/solution.py)",
           "images": []
+        },
+        {
+          "author": "wwang2",
+          "date": "2026-04-19",
+          "body": "CONCLUDED at milestone 3: ensemble family dead (orbit 10 arithmetic +0.080, orbit 13 geomean+anneal +0.012; both below single-FM individuals orbit 07 +0.319).",
+          "images": []
         }
       ],
       "eval_version": "eval-v2"
@@ -459,6 +465,12 @@
           "author": "wwang2",
           "date": "2026-04-19",
           "body": "<!-- RE:EVAL orbit=11-cmaes-dinov2-pop64-restarts eval_version=eval-v2 -->\n## Eval Check (batch 3, seed 1, eval-v2)\n**Result:** VERIFIED but BELOW orbit 07 (+0.319) \u2014 restart schedule hurt, not helped\n**Measured:** 0.246805\n**Wall clock:** 1526.1s\n**Evaluator:** eval-v2 + infra fix (commit 08e6131)\n**Baseline anchor:** LCF_judge=0.1185 (HONEST_ANCHOR)\n\n**Branch:** [orbit/11-cmaes-dinov2-pop64-restarts](https://github.com/canele-ai/artificial-life2/tree/orbit/11-cmaes-dinov2-pop64-restarts)\n**Solution:** [solution.py](https://github.com/canele-ai/artificial-life2/blob/orbit/11-cmaes-dinov2-pop64-restarts/orbits/11-cmaes-dinov2-pop64-restarts/solution.py)",
+          "images": []
+        },
+        {
+          "author": "wwang2",
+          "date": "2026-04-19",
+          "body": "CONCLUDED at milestone 3: Sep-CMA-ES scaling beyond pop=16 is saturated. pop=64+restarts regressed vs pop=16 (+0.247 vs +0.319). Orbit 14 pop=128 only +0.006 over pop=16.",
           "images": []
         }
       ],
@@ -502,6 +514,12 @@
           "date": "2026-04-19",
           "body": "<!-- RE:EVAL orbit=13-ensemble-geomean-alpha-anneal eval_version=eval-v2 -->\n## Eval Check (batch 3, seed 1, eval-v2)\n**Result:** VERIFIED but WEAK (+0.012 vs orbit 10 arithmetic at +0.080 \u2014 geomean+anneal is WORSE, not better)\n**Measured:** 0.012132\n**Evaluator:** eval-v2\n\nGeometric-mean CLIP\u00d7DINOv2 with \u03b1-anneal(0.5\u21921.0) scored LOWER than orbit 10's arithmetic mean. This confirms campaign-reviewer's milestone 2 hypothesis: the two FMs are redundant-and-interfering, not complementary. Ensemble as a direction is CONCLUDED-as-dead-end.",
           "images": []
+        },
+        {
+          "author": "wwang2",
+          "date": "2026-04-19",
+          "body": "CONCLUDED at milestone 3: ensemble family dead (see also orbit 10 arithmetic and orbit 07 single-FM top).",
+          "images": []
         }
       ],
       "eval_version": "eval-v2"
@@ -523,6 +541,12 @@
           "date": "2026-04-19",
           "body": "<!-- RE:EVAL orbit=14-cmaes-dinov2-pop128 eval_version=eval-v2 -->\n## Eval Check (batch 3, seed 1, eval-v2)\n**Result:** VERIFIED marginal gain over orbit 07 (+0.006) \u2014 pop=128 plateau\n**Measured:** 0.325451\n**Wall clock:** 1565.5s\n**Evaluator:** eval-v2 + infra fix (commit 08e6131)\n**Baseline anchor:** LCF_judge=0.1185 (HONEST_ANCHOR)\n\n**Branch:** [orbit/14-cmaes-dinov2-pop128](https://github.com/canele-ai/artificial-life2/tree/orbit/14-cmaes-dinov2-pop128)\n**Solution:** [solution.py](https://github.com/canele-ai/artificial-life2/blob/orbit/14-cmaes-dinov2-pop128/orbits/14-cmaes-dinov2-pop128/solution.py)",
           "images": []
+        },
+        {
+          "author": "wwang2",
+          "date": "2026-04-19",
+          "body": "CONCLUDED at milestone 3: pop=128 + 4-restart produced only +0.006 over pop=16 (+0.325 vs +0.319). CMA-ES scaling saturated on Lenia.",
+          "images": []
         }
       ],
       "eval_version": "eval-v2"
@@ -543,6 +567,75 @@
           "author": "wwang2",
           "date": "2026-04-19",
           "body": "<!-- RE:EVAL orbit=15-flow-lenia-retry eval_version=eval-v2 -->\n## Eval Check (batch 3, seed 1, eval-v2)\n**Result:** VERIFIED NEW LEADER \u2014 Flow-Lenia substrate beats Lenia by +0.020 over orbit 07 (axis-1 substrate gap hypothesis validated)\n**Measured:** 0.339329\n**Wall clock:** 1594.9s\n**Evaluator:** eval-v2 + infra fix (commit 08e6131)\n**Baseline anchor:** LCF_judge=0.1185 (HONEST_ANCHOR)\n\n**Branch:** [orbit/15-flow-lenia-retry](https://github.com/canele-ai/artificial-life2/tree/orbit/15-flow-lenia-retry)\n**Solution:** [solution.py](https://github.com/canele-ai/artificial-life2/blob/orbit/15-flow-lenia-retry/orbits/15-flow-lenia-retry/solution.py)",
+          "images": []
+        },
+        {
+          "author": "wwang2",
+          "date": "2026-04-19",
+          "body": "<!-- RE:EVAL orbit=15-flow-lenia-retry eval_version=eval-v2 seed=crossval -->\n## CROSS-VALIDATION (batch 4) \u2014 orbit 15 FALSIFIED\n\n**Seed 2:** METRIC=\u22120.118516, parse_fail=48/48, lcf_theta=0.0\n**Seed 3:** METRIC=\u22120.118516, parse_fail=48/48, lcf_theta=0.0\n**Seed 1 (batch 3):** METRIC=+0.339329, parse_fail=21/48, lcf_theta=0.458\n\nThe +0.339 result at seed 1 is **not reproducible**. Seeds 2+3 both collapsed to lcf_theta=0.0 with 100% judge parse failure. Orbit 15 is demoted from leader to FALSIFIED. The true leader under 3-seed cross-validation is **07-real-cmaes-dinov2 (+0.319 at seed 1)**, but its cross-validation has not yet been performed \u2014 it may also collapse under more seeds.",
+          "images": []
+        }
+      ],
+      "eval_version": "eval-v2"
+    },
+    {
+      "name": "16-flow-lenia-dinov2",
+      "status": "evaluated",
+      "strategy": "16-flow-lenia-dinov2: EXTEND orbit 15: Flow-Lenia substrate + DINOv2-lite (QR-orthogonal) + real Sep-CMA-ES \u2014 stack top-2 hypothesis axes",
+      "metric": -0.118516,
+      "issue": 17,
+      "parents": [
+        "15-flow-lenia-retry"
+      ],
+      "log_url": "https://github.com/canele-ai/artificial-life2/blob/orbit/16-flow-lenia-dinov2/orbits/16-flow-lenia-dinov2/log.md",
+      "figures": [],
+      "issue_comments": [
+        {
+          "author": "wwang2",
+          "date": "2026-04-19",
+          "body": "<!-- RE:EVAL orbit=16-flow-lenia-dinov2 eval_version=eval-v2 seed=1 -->\n## Eval Check (batch 4, seed 1, eval-v2)\n**Result:** FAILED (100% judge parse failures)\n**Measured:** -0.118516\n**Judge parse failures:** 48/48 (100% = no tier received any valid JSON response from judge)\n**Evaluator:** eval-v2 + infra fix (commit 08e6131)\n\nCRITICAL: judge_parse_failures=48/48 means the judge's response could not be parsed as JSON for 100% of strip\u00d7run combinations. All tier medians = 0.0 \u2192 geomean = 0.0 \u2192 lcf_theta = 0.0 \u2192 metric = \u2212baseline = \u22120.1185. This is NOT a research signal; it is an evaluator defect or a genuinely un-parseable input (e.g., blank/degenerate rollouts the judge refused to score).\n\n**Branch:** [orbit/16-flow-lenia-dinov2](https://github.com/canele-ai/artificial-life2/tree/orbit/16-flow-lenia-dinov2)",
+          "images": []
+        }
+      ],
+      "eval_version": "eval-v2"
+    },
+    {
+      "name": "17-flow-lenia-multi-seed",
+      "status": "evaluated",
+      "strategy": "17-flow-lenia-multi-seed: EXTEND orbit 15: re-run at 3 seeds for cross-validation of +0.339 claim (currently only 1 seed)",
+      "metric": -0.118516,
+      "issue": 18,
+      "parents": [
+        "15-flow-lenia-retry"
+      ],
+      "log_url": "https://github.com/canele-ai/artificial-life2/blob/orbit/17-flow-lenia-multi-seed/orbits/17-flow-lenia-multi-seed/log.md",
+      "figures": [],
+      "issue_comments": [
+        {
+          "author": "wwang2",
+          "date": "2026-04-19",
+          "body": "<!-- RE:EVAL orbit=17-flow-lenia-multi-seed eval_version=eval-v2 seed=2 -->\n## Eval Check (batch 4, seed 2, eval-v2)\n**Result:** FAILED (same as above \u2014 100% parse failures) \u2014 cross-validation of orbit 15 falsifies +0.339 leader result\n**Measured:** -0.118516\n**Judge parse failures:** 48/48 (100% = no tier received any valid JSON response from judge)\n**Evaluator:** eval-v2 + infra fix (commit 08e6131)\n\nCRITICAL: judge_parse_failures=48/48 means the judge's response could not be parsed as JSON for 100% of strip\u00d7run combinations. All tier medians = 0.0 \u2192 geomean = 0.0 \u2192 lcf_theta = 0.0 \u2192 metric = \u2212baseline = \u22120.1185. This is NOT a research signal; it is an evaluator defect or a genuinely un-parseable input (e.g., blank/degenerate rollouts the judge refused to score).\n\n**Branch:** [orbit/17-flow-lenia-multi-seed](https://github.com/canele-ai/artificial-life2/tree/orbit/17-flow-lenia-multi-seed)",
+          "images": []
+        }
+      ],
+      "eval_version": "eval-v2"
+    },
+    {
+      "name": "18-flow-lenia-clip-pop64",
+      "status": "evaluated",
+      "strategy": "18-flow-lenia-clip-pop64: EXTEND orbit 15: Flow-Lenia + CLIP-OE + pop=64 real CMA-ES \u2014 tests whether Flow-Lenia re-opens compute scaling that saturated on Lenia",
+      "metric": -0.118516,
+      "issue": 19,
+      "parents": [
+        "15-flow-lenia-retry"
+      ],
+      "log_url": "https://github.com/canele-ai/artificial-life2/blob/orbit/18-flow-lenia-clip-pop64/orbits/18-flow-lenia-clip-pop64/log.md",
+      "figures": [],
+      "issue_comments": [
+        {
+          "author": "wwang2",
+          "date": "2026-04-19",
+          "body": "<!-- RE:EVAL orbit=18-flow-lenia-clip-pop64 eval_version=eval-v2 seed=1 -->\n## Eval Check (batch 4, seed 1, eval-v2)\n**Result:** FAILED (100% parse failures)\n**Measured:** -0.118516\n**Judge parse failures:** 48/48 (100% = no tier received any valid JSON response from judge)\n**Evaluator:** eval-v2 + infra fix (commit 08e6131)\n\nCRITICAL: judge_parse_failures=48/48 means the judge's response could not be parsed as JSON for 100% of strip\u00d7run combinations. All tier medians = 0.0 \u2192 geomean = 0.0 \u2192 lcf_theta = 0.0 \u2192 metric = \u2212baseline = \u22120.1185. This is NOT a research signal; it is an evaluator defect or a genuinely un-parseable input (e.g., blank/degenerate rollouts the judge refused to score).\n\n**Branch:** [orbit/18-flow-lenia-clip-pop64](https://github.com/canele-ai/artificial-life2/tree/orbit/18-flow-lenia-clip-pop64)",
           "images": []
         }
       ],
