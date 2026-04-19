@@ -442,6 +442,90 @@
         }
       ],
       "eval_version": "eval-v2"
+    },
+    {
+      "name": "11-cmaes-dinov2-pop64-restarts",
+      "status": "pending",
+      "strategy": "11-cmaes-dinov2-pop64-restarts: EXTEND orbit 07: pop=64 real Sep-CMA-ES + DINOv2-lite (QR-orthogonal) + 3-restart sigma schedule \u2014 scaling study for CMA-ES lift",
+      "metric": null,
+      "issue": 12,
+      "parents": [
+        "07-real-cmaes-dinov2"
+      ],
+      "log_url": "https://github.com/canele-ai/artificial-life2/blob/orbit/11-cmaes-dinov2-pop64-restarts/orbits/11-cmaes-dinov2-pop64-restarts/log.md",
+      "figures": [],
+      "issue_comments": [],
+      "eval_version": "eval-v2"
+    },
+    {
+      "name": "12-real-dinov2-torch",
+      "status": "evaluated",
+      "strategy": "12-real-dinov2-torch: EXTEND orbit 07: swap DINOv2-lite patch proxy for facebook/dinov2-small (real pretrained DINOv2 via torch.inference_mode) \u2014 pretrained FM vs hand-rolled proxy",
+      "metric": 0.0,
+      "issue": 13,
+      "parents": [
+        "07-real-cmaes-dinov2"
+      ],
+      "log_url": "https://github.com/canele-ai/artificial-life2/blob/orbit/12-real-dinov2-torch/orbits/12-real-dinov2-torch/log.md",
+      "figures": [],
+      "issue_comments": [
+        {
+          "author": "wwang2",
+          "date": "2026-04-19",
+          "body": "<!-- RE:EVAL orbit=12-real-dinov2-torch eval_version=eval-v2 -->\n## Eval Check (batch 3, seed 1, eval-v2)\n**Result:** FAILED (search_crash: torch ModuleNotFoundError \u2014 torch not in Modal search_image)\n**Measured:** 0.000000\n**Evaluator:** eval-v2\n\nThis is the EXPECTED fail-loud outcome: orbit 12 intentionally did not add a torch fallback. Adding torch to the Modal image is deferred to eval-v3 (heavyweight dep \u2014 ~2GB wheel).",
+          "images": []
+        }
+      ],
+      "eval_version": "eval-v2"
+    },
+    {
+      "name": "13-ensemble-geomean-alpha-anneal",
+      "status": "evaluated",
+      "strategy": "13-ensemble-geomean-alpha-anneal: REFINE orbit 10: geometric-mean CLIP*DINOv2 ensemble with alpha annealed from 0.5 to 1.0 across generations \u2014 diagnostic for orbit 10's ensemble collapse",
+      "metric": 0.012132,
+      "issue": 14,
+      "parents": [
+        "10-ensemble-clip-dinov2"
+      ],
+      "log_url": "https://github.com/canele-ai/artificial-life2/blob/orbit/13-ensemble-geomean-alpha-anneal/orbits/13-ensemble-geomean-alpha-anneal/log.md",
+      "figures": [],
+      "issue_comments": [
+        {
+          "author": "wwang2",
+          "date": "2026-04-19",
+          "body": "<!-- RE:EVAL orbit=13-ensemble-geomean-alpha-anneal eval_version=eval-v2 -->\n## Eval Check (batch 3, seed 1, eval-v2)\n**Result:** VERIFIED but WEAK (+0.012 vs orbit 10 arithmetic at +0.080 \u2014 geomean+anneal is WORSE, not better)\n**Measured:** 0.012132\n**Evaluator:** eval-v2\n\nGeometric-mean CLIP\u00d7DINOv2 with \u03b1-anneal(0.5\u21921.0) scored LOWER than orbit 10's arithmetic mean. This confirms campaign-reviewer's milestone 2 hypothesis: the two FMs are redundant-and-interfering, not complementary. Ensemble as a direction is CONCLUDED-as-dead-end.",
+          "images": []
+        }
+      ],
+      "eval_version": "eval-v2"
+    },
+    {
+      "name": "14-cmaes-dinov2-pop128",
+      "status": "pending",
+      "strategy": "14-cmaes-dinov2-pop128: EXTEND orbit 07: pop=128 + 4-restart CMA-ES + DINOv2-lite \u2014 stretch-compute ceiling for this family",
+      "metric": null,
+      "issue": 15,
+      "parents": [
+        "07-real-cmaes-dinov2"
+      ],
+      "log_url": "https://github.com/canele-ai/artificial-life2/blob/orbit/14-cmaes-dinov2-pop128/orbits/14-cmaes-dinov2-pop128/log.md",
+      "figures": [],
+      "issue_comments": [],
+      "eval_version": "eval-v2"
+    },
+    {
+      "name": "15-flow-lenia-retry",
+      "status": "pending",
+      "strategy": "15-flow-lenia-retry: RE-RUN orbit 09 under eval-v2 + infra fix (commit 08e6131 drops block_network=True) \u2014 Flow-Lenia + real Sep-CMA-ES + CLIP-OE, was blocked by CLIP cache crash",
+      "metric": null,
+      "issue": 16,
+      "parents": [
+        "09-flow-lenia-real-cmaes"
+      ],
+      "log_url": "https://github.com/canele-ai/artificial-life2/blob/orbit/15-flow-lenia-retry/orbits/15-flow-lenia-retry/log.md",
+      "figures": [],
+      "issue_comments": [],
+      "eval_version": "eval-v2"
     }
   ]
 }
