@@ -2,7 +2,7 @@
 issue: 13
 parents: [07-real-cmaes-dinov2]
 eval_version: eval-v2
-metric: null
+metric: 0.000000
 ---
 
 # Research Notes
