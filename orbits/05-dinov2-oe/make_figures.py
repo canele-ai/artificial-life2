@@ -107,10 +107,13 @@ def make_narrative(best_params: jax.Array, out_path: Path, seed: int = 9000):
     strip_b = make_strip(baseline_params, seed)
     strip_d = make_strip(best_params, seed)
 
-    fig, axes = plt.subplots(2, 1, figsize=(12, 5.2))
+    fig, axes = plt.subplots(
+        2, 1, figsize=(13, 6.0),
+        gridspec_kw={"hspace": 0.55},
+    )
     for ax, strip, title, col in [
         (axes[0], strip_b,
-         "Baseline (theta=0): trivial blob, no structural evolution",
+         "Baseline (theta = 0): trivial blob, no structural evolution",
          COLORS["baseline"]),
         (axes[1], strip_d,
          "DINOv2-OE best  (Sep-CMA-ES + DINOv2-lite-OE inner loop)",
@@ -120,16 +123,17 @@ def make_narrative(best_params: jax.Array, out_path: Path, seed: int = 9000):
         ax.set_xticks([])
         ax.set_yticks([])
         ax.set_title(title, color=col, loc="left", fontweight="medium",
-                     pad=12, fontsize=13)
+                     pad=14, fontsize=13)
         H, Wstrip, _ = strip.shape
         n_frames = len(sol._FRAME_PICKS)
         w_each = Wstrip / n_frames
         for i, t in enumerate(sol._FRAME_PICKS):
-            ax.text((i + 0.5) * w_each, H + 14, f"t={t}",
+            ax.text((i + 0.5) * w_each, H + 14, f"t = {t}",
                     ha="center", va="top", fontsize=10, color="#444")
     fig.suptitle(
-        "Lenia 256-step rollout on held-out seed 9000: baseline vs DINOv2-OE best",
-        y=1.02, fontsize=14, fontweight="medium",
+        "Lenia 256-step rollout on held-out seed 9000: "
+        "baseline vs DINOv2-OE best",
+        fontsize=14, fontweight="medium",
     )
     fig.savefig(out_path, dpi=170, bbox_inches="tight")
     plt.close(fig)
