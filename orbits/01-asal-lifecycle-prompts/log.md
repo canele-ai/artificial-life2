@@ -2,7 +2,7 @@
 issue: 2
 parents: []
 eval_version: eval-v1
-metric: null
+metric: -0.016769
 ---
 
 # Orbit 01 — Life-cycle-aware ASAL search
