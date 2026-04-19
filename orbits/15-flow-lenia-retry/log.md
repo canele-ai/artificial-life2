@@ -2,7 +2,7 @@
 issue: 16
 parents: [09-flow-lenia-real-cmaes]
 eval_version: eval-v2
-metric: null
+metric: 0.339329
 ---
 
 # Research Notes — orbit 15-flow-lenia-retry
