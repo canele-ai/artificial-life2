@@ -314,24 +314,23 @@ def fig_narrative(best_params_path: str | None = None):
     bsl = _strip(baseline)
     d07 = _strip(bp)
 
-    fig, axes = plt.subplots(2, 5, figsize=(11, 4.6), constrained_layout=True)
+    fig, axes = plt.subplots(2, 5, figsize=(15, 6.8), constrained_layout=True)
     for col in range(5):
         for row, (lbl, arr) in enumerate([
-            ("baseline (θ=0)", bsl),
-            ("orbit 07 best", d07),
+            ("baseline\nθ = 0", bsl),
+            ("orbit 07\nbest", d07),
         ]):
             ax = axes[row, col]
             ax.imshow(arr[col], cmap="magma", vmin=0, vmax=1)
             ax.set_xticks([]); ax.set_yticks([])
             if row == 0:
-                ax.set_title(f"t = {int(picks[col])}", fontsize=10)
+                ax.set_title(f"t = {int(picks[col])}", fontsize=13)
             if col == 0:
-                ax.set_ylabel(lbl, fontsize=10)
+                ax.set_ylabel(lbl, fontsize=12)
             ax.grid(False)
     fig.suptitle(
-        "Baseline vs orbit-07 best — held-out seed 9000\n"
-        "real Sep-CMA-ES + QR-orthogonal DINOv2-lite",
-        fontsize=12
+        "Baseline vs orbit-07 best on held-out seed 9000  —  real Sep-CMA-ES + QR-orthogonal DINOv2-lite",
+        fontsize=14
     )
     out = FIGS / "narrative.png"
     fig.savefig(out, bbox_inches="tight")
