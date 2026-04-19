@@ -30,6 +30,7 @@ _TRANSFORMERS_VER = "4.47.1"
 _FLAX_VER = "0.10.2"
 _SCIPY_VER = "1.13.1"
 _ANTHROPIC_VER = "0.96.0"
+_EVOSAX_VER = "0.1.6"
 
 # ── Modal Volumes (pre-populated at campaign bootstrap) ──────────────────────
 hf_cache_vol = modal.Volume.from_name("hf-cache", create_if_missing=True)
@@ -48,6 +49,7 @@ search_image = (
         f"transformers=={_TRANSFORMERS_VER}",
         f"flax=={_FLAX_VER}",
         f"scipy=={_SCIPY_VER}",
+        f"evosax=={_EVOSAX_VER}",
         extra_options=(
             "--find-links "
             "https://storage.googleapis.com/jax-releases/jax_cuda_releases.html"

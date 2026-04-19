@@ -44,7 +44,7 @@ log = logging.getLogger("evaluator")
 # FROZEN CONSTANTS
 # ══════════════════════════════════════════════════════════════════════════════
 
-EVAL_VERSION = "eval-v1"
+EVAL_VERSION = "eval-v2"
 JUDGE_MODEL = "claude-sonnet-4-6"
 JUDGE_TEMP = 0.0
 JUDGE_MAX_TOKENS = 256
@@ -84,7 +84,7 @@ UNIFORM_TIER_RANGE_MIN = 0.02
 RUBRIC_SHA256 = "9f2945d70ee3259d8f4a513105b54e0a55cc9dffba88a349aa3087a0ec9ad460"
 
 # Guard 10 — baseline SHA; None until campaign freeze at Phase 2.5.
-BASELINE_SHA256: str | None = "15c5b5d051832e6dd485b5ff6a9d93dd13bd9d324034c94bfa5f8384b8f3bd7f"
+BASELINE_SHA256: str | None = "a72d63e0b0707dbdde958b0cda1aa8793414c7d30f58212fb73fc40603515f68"
 # Guard 1 — rubric system prompt EMBEDDED (never read from repo in search container).
 RUBRIC_SYSTEM_PROMPT = (
     "You are a strict scientific rater evaluating artificial-life simulations.\n"
@@ -552,7 +552,8 @@ def _env_audit() -> dict:
     import importlib
     audit: dict[str,Any]={"python_version":sys.version.split()[0]}
     for pkg,key in [("jax","jax_version"),("jaxlib","jaxlib_version"),
-                    ("anthropic","anthropic_sdk_version")]:
+                    ("anthropic","anthropic_sdk_version"),
+                    ("evosax","evosax_version")]:
         try: audit[key]=getattr(importlib.import_module(pkg),"__version__","?")
         except Exception: audit[key]="missing"
     try:

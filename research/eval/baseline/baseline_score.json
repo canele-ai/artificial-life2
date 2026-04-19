@@ -1,6 +1,6 @@
 {
-  "asal_commit_sha": "reimplemented_from_arxiv_2412.17799_asal_metrics.calc_supervised_target_score; sep_cma_es(popsize=16,sigma=0.1,gens=200); PRNGKey(0); prompts=pinned_in_asal_baseline.py",
-  "eval_version": "eval-v1",
+  "asal_commit_sha": "HONEST_ANCHOR_eval_v2: random-search + CLIP-OE on pop=16, 3-min budget, PRNGKey(0). evosax was absent from Modal search_image at eval-v1 freeze; good.py silently fell back to random search under ImportError. Discovered at batch-1 milestone; this file is kept as the honest anchor value (same LCF_judge bytes), eval-v2 adds evosax to the image, fail-loud good.py, and evosax_version to env_audit (Guard 11 signal). arXiv 2412.17799 ASAL supervised-target CMA-ES baseline deferred to eval-v3.",
+  "eval_version": "eval-v2",
   "judge_version": "claude-sonnet-4-6",
   "lcf_judge": 0.1185158226544496,
   "per_seed_tier_scalars": [

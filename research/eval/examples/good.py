@@ -98,11 +98,13 @@ def search(
     budget: dict,
     rng: jax.Array,
 ) -> dict:
-    """Sep-CMA-ES with CLIP-OE proxy.  Uses evosax if available; else random.
+    """Sep-CMA-ES with CLIP-OE proxy. eval-v2: fail-loud on missing evosax.
 
     Wall-clock cap: budget["wall_clock_s"] = 1800 s (enforced by evaluator
     SIGKILL; we also self-limit with a 10 s safety margin).
     """
+    from evosax import Sep_CMA_ES   # eval-v2: no silent ImportError fallback
+
     wall_clock_s = float(budget.get("wall_clock_s", 1800))
     K = _DIM.get(substrate_name, 8)
     t0 = time.monotonic()
@@ -111,64 +113,42 @@ def search(
     best_proxy_per_gen: list[float] = []
     archive: list[jax.Array] = []
 
-    try:
-        from evosax import Sep_CMA_ES
+    strategy = Sep_CMA_ES(
+        popsize=_POP_SIZE,
+        num_dims=K,
+        sigma_init=_SIGMA_INIT,
+    )
+    es_state = strategy.initialize(rng)
 
-        strategy = Sep_CMA_ES(
-            popsize=_POP_SIZE,
-            num_dims=K,
-            sigma_init=_SIGMA_INIT,
-        )
-        es_state = strategy.initialize(rng)
+    best_params = jnp.zeros(K, dtype=jnp.float32)
+    best_score = float("-inf")
 
-        best_params = jnp.zeros(K, dtype=jnp.float32)
-        best_score = float("-inf")
+    for gen in range(_N_GENERATIONS):
+        if time.monotonic() - t0 >= wall_clock_s - 10:
+            break
 
-        for gen in range(_N_GENERATIONS):
-            if time.monotonic() - t0 >= wall_clock_s - 10:
-                break
+        rng, sub = jax.random.split(rng)
+        params_batch, es_state = strategy.ask(sub, es_state)  # [pop, K]
 
-            rng, sub = jax.random.split(rng)
-            params_batch, es_state = strategy.ask(sub, es_state)  # [pop, K]
+        s = int(seed_pool_train[gen % n_train])
+        fitnesses = _clip_oe_score(params_batch, s)  # [pop]
 
-            # Evaluate on a rotating training seed.
-            s = int(seed_pool_train[gen % n_train])
-            fitnesses = _clip_oe_score(params_batch, s)  # [pop]
+        # evosax maximises by negating fitness (it minimises internally).
+        es_state = strategy.tell(params_batch, -fitnesses, es_state)
 
-            # evosax maximises by negating fitness (it minimises internally).
-            es_state = strategy.tell(params_batch, -fitnesses, es_state)
+        gen_best_idx = int(jnp.argmax(fitnesses))
+        gen_best = float(fitnesses[gen_best_idx])
+        if gen_best > best_score:
+            best_score = gen_best
+            best_params = params_batch[gen_best_idx]
+            archive.append(best_params)
 
-            gen_best_idx = int(jnp.argmax(fitnesses))
-            gen_best = float(fitnesses[gen_best_idx])
-            if gen_best > best_score:
-                best_score = gen_best
-                best_params = params_batch[gen_best_idx]
-                archive.append(best_params)
+        best_proxy_per_gen.append(best_score)
 
-            best_proxy_per_gen.append(best_score)
-
-            if (gen + 1) % _CLEAR_CACHE_EVERY == 0:
-                import gc
-                gc.collect()
-                jax.clear_caches()
-
-    except ImportError:
-        # evosax not installed — fall back to random search.
-        best_params = jnp.zeros(K, dtype=jnp.float32)
-        best_score = float("-inf")
-        gen = 0
-        while time.monotonic() - t0 < wall_clock_s - 10:
-            rng, sub = jax.random.split(rng)
-            batch = jax.random.uniform(sub, (_POP_SIZE, K), minval=-1.0, maxval=1.0)
-            s = int(seed_pool_train[gen % n_train])
-            fitnesses = _clip_oe_score(batch, s)
-            best_idx = int(jnp.argmax(fitnesses))
-            if float(fitnesses[best_idx]) > best_score:
-                best_score = float(fitnesses[best_idx])
-                best_params = batch[best_idx]
-                archive.append(best_params)
-            best_proxy_per_gen.append(best_score)
-            gen += 1
+        if (gen + 1) % _CLEAR_CACHE_EVERY == 0:
+            import gc
+            gc.collect()
+            jax.clear_caches()
 
     archive_arr = (
         jnp.stack(archive[-16:]) if archive else jnp.zeros((1, K), dtype=jnp.float32)
