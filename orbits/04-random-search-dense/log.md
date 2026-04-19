@@ -2,7 +2,7 @@
 issue: 5
 parents: []
 eval_version: eval-v1
-metric: null
+metric: 0.232577
 ---
 
 # Orbit 04 — dense stateless random search (OOM-bypass control)
