@@ -2,7 +2,7 @@
 issue: 17
 parents: [15-flow-lenia-retry]
 eval_version: eval-v2
-metric: null
+metric: -0.118516
 ---
 
 # Research Notes — orbit 16: Flow-Lenia × DINOv2-lite (stack top two axes)
