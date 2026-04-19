@@ -2,7 +2,7 @@
 issue: 4
 parents: []
 eval_version: eval-v1
-metric: null
+metric: 0.000000
 ---
 
 # Orbit 03 — Flow-Lenia × Sep-CMA-ES × CLIP-OE
