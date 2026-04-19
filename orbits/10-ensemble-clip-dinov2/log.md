@@ -2,7 +2,7 @@
 issue: 11
 parents: []
 eval_version: eval-v2
-metric: null
+metric: 0.080433
 ---
 
 # Orbit 10-ensemble-clip-dinov2 — Two-FM ensemble open-endedness (Axis 2, novel combination)
