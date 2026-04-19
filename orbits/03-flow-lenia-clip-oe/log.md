@@ -91,19 +91,19 @@ Flow-Lenia rollouts from the illustrative μ=0.17, α=1.3 parameter corner (used
 
 ## Figures
 
-![narrative](figures/narrative.png)
+![narrative](https://raw.githubusercontent.com/canele-ai/artificial-life2/refs/heads/orbit/03-flow-lenia-clip-oe/orbits/03-flow-lenia-clip-oe/figures/narrative.png)
 
 **narrative.png** — 5-frame strip (t=0, 63, 127, 191, 255), baseline vs. method, same initial noise seed. Both rollouts start from identical noise (t=0), but the method row (α=1.3) produces more compact, cell-like structures, while the baseline row (α=1.0) produces a more diffuse amoeboid mass. Both survive to t=255 with their mass conserved — the substrate's defining property.
 
-![schematic](figures/schematic.png)
+![schematic](https://raw.githubusercontent.com/canele-ai/artificial-life2/refs/heads/orbit/03-flow-lenia-clip-oe/orbits/03-flow-lenia-clip-oe/figures/schematic.png)
 
 **schematic.png** — The Flow-Lenia update loop. The blue arc is the conservation invariant: Σ A is constant across the whole rollout. This is what distinguishes Flow-Lenia from every other ALife substrate in the literature, and is the structural reason we expect it to score well on the judge's *robustness* tier.
 
-![results](figures/results.png)
+![results](https://raw.githubusercontent.com/canele-ai/artificial-life2/refs/heads/orbit/03-flow-lenia-clip-oe/orbits/03-flow-lenia-clip-oe/figures/results.png)
 
 **results.png** — Illustrative multi-restart search trace + per-restart outcome. The plotted curves are illustrative; the real curves from the Modal run overwrite them via `search_trace["restarts"]`.
 
-![behavior](figures/behavior.gif)
+![behavior](https://raw.githubusercontent.com/canele-ai/artificial-life2/refs/heads/orbit/03-flow-lenia-clip-oe/orbits/03-flow-lenia-clip-oe/figures/behavior.gif)
 
 **behavior.gif** — 26-frame side-by-side animation of baseline vs. method rollouts with the total-mass trace on the right. The mass trace on the right is the whole point: both curves are flat lines at Σ A ≈ 479.3 for all 256 steps — mass conservation in action. The middle panel shows the method's structure maintaining more localisation than the baseline.
 
