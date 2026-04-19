@@ -2,7 +2,7 @@
 issue: 6
 parents: []
 eval_version: eval-v1
-metric: null
+metric: 0.293939
 ---
 
 # Orbit 05-dinov2-oe — Foundation-Model Gap (Axis 2)
