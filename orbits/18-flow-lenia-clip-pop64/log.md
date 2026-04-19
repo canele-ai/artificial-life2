@@ -2,7 +2,7 @@
 issue: 19
 parents: [15-flow-lenia-retry]
 eval_version: eval-v2
-metric: null
+metric: -0.118516
 ---
 
 # Research Notes — Flow-Lenia × Sep-CMA-ES pop=64
