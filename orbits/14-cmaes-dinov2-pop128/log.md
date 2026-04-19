@@ -2,7 +2,7 @@
 issue: 15
 parents: [07-real-cmaes-dinov2]
 eval_version: eval-v2
-metric: null
+metric: 0.325451
 ---
 
 # Research Notes — orbit 14 (CMA-ES pop=128 × 4-restart — stretch compute)
