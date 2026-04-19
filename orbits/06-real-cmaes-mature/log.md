@@ -2,7 +2,7 @@
 issue: 7
 parents: [02-asal-mature-organism]
 eval_version: eval-v2
-metric: null
+metric: 0.000000
 ---
 
 # Research Notes — orbit 06-real-cmaes-mature
