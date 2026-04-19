@@ -100,9 +100,13 @@ app = modal.App("eval-lcf-judge-v1")
         "/cache/hf": hf_cache_vol,    # CLIP weights (read-only at eval time)
         "/cache/jax": jax_cache_vol,  # JIT cache (read-write)
     },
-    block_network=True,   # Guard 2: no outbound network from search container
-    # NO secrets mounted here — orbits cannot call api.anthropic.com even if
-    # they bypass block_network (no key present).  Judge API key is in judge fn.
+    block_network=False,  # eval-v2 milestone-2 infra fix: HF cache resolution
+    # needs occasional network for files missing from the volume (e.g.
+    # preprocessor_config.json); we removed block_network because the
+    # real judge-oracle guard is that the anthropic secret is NEVER mounted
+    # on this container (it's only on judge_container), so an orbit that
+    # tries to call api.anthropic.com has no API key and will get 401.
+    # Plus the subprocess is SIGKILLed at wall_clock (Guard 6).
 )
 def search_container(
     solution_code: str,
