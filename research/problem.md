@@ -1,3 +1,5 @@
+<!-- metric: lcf_judge_heldout target: null eval: eval-v2 -->
+
 # Improve on ASAL: life-cycle-aware search for artificial life
 
 ## Problem Statement
@@ -139,3 +141,56 @@ promising orbit:
    wall-clock equalized, or GPU-hour equalized?
 5. Does a single-scalar life-cycle score suffice, or do we need a
    multi-objective Pareto front (e.g. fidelity × robustness × diversity)?
+
+## Metric history
+
+Eval has been re-frozen once during this campaign. Each tag below records what
+changed and why; metric semantics carry forward across versions but the
+provenance/quality signals around them have improved.
+
+- **eval-v1** (frozen 2026-04-18) — initial freeze. Inner-loop CLIP-OE
+  + Sep-CMA-ES (`good.py`) + 5-tier VLM judge (Claude Sonnet 4.6) +
+  geomean-then-trimmed-mean over 16 held-out seeds. Baseline anchored at
+  LCF_judge=0.1185 (`baseline_score.json`, SHA `15c5b5d0…`).
+
+- **eval-v2** (frozen 2026-04-19, commit `7fbd935` + infra fix `08e6131`) —
+  metric semantics unchanged (still `lcf_judge_heldout`); honesty fixes
+  surfaced at milestone 1's cross-orbit synthesis:
+  - **`evosax==0.1.6` added to Modal `search_image`.** At eval-v1 it was absent;
+    `good.py`'s silent `try/except ImportError` fallback meant every orbit
+    claiming Sep-CMA-ES actually ran random search wearing a CMA-ES label.
+    The frozen eval-v1 baseline 0.1185 was honest random-search + CLIP-OE,
+    just mislabeled. eval-v2 keeps the same numerical anchor (same bytes)
+    and updates metadata to HONEST_ANCHOR. BASELINE_SHA256 bumped to
+    `a72d63e0…`.
+  - **`good.py` made fail-loud.** Removed the `ImportError` fallback;
+    a missing dep now crashes honestly instead of silently degrading.
+  - **`evosax_version` captured in `env_audit`.** Provenance signal for
+    a future Guard 11 (algorithm-provenance check); search_trace claims
+    can be cross-checked against actually-resolved imports.
+  - **`block_network=True` removed from `search_container`.** Defense-in-depth
+    that broke legitimate HF cache resolution after the image rebuild
+    (preprocessor_config.json missing); the real judge-oracle guard is the
+    anthropic secret being judge-only, plus subprocess SIGKILL.
+
+### Open eval-v3 candidates (NOT yet frozen)
+
+Discovered at milestone 3 cross-validation. Tracked here so the spec
+records the work-in-progress contract:
+
+- **Judge parse-failure handling.** `judge_parse_failures` is captured in
+  `METRIC_COMPONENTS` but never surfaced in the leaderboard. Orbit 15
+  scored +0.339 at seed 1 (parse_failures=21/48) and 0.0 at seeds 2 and 3
+  (parse_failures=48/48). The metric collapsed silently to `−baseline`
+  rather than flagging "judge starved on this input class". Proposal:
+  emit `status="judge_parse_starvation"` when `parse_success_rate < 0.5`;
+  surface `parse_success_rate` as a top-level quality signal next to METRIC.
+- **Multi-seed contract.** Single-seed metrics are provisional; treat
+  `best_orbit` as null until ≥3 seeds confirm. (Open framework issue:
+  https://github.com/canele-ai/git-evolve/issues/9.)
+- **`torch` in Modal `search_image`.** Orbit 12 honestly crashed under
+  eval-v2 because torch isn't in the search image. Adding it costs ~2 GB
+  of image bytes but unlocks pretrained-FM swap orbits.
+- **Algorithm-provenance assertion.** Solutions claiming algorithm `X` whose
+  `search_trace["algorithm"]` references a module not in `env_audit`
+  should be auto-flagged as `algorithm_provenance_warning`.
