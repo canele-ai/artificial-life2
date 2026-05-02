@@ -464,7 +464,7 @@ def aggregate(
         "eval_version":EVAL_VERSION,"judge_version":JUDGE_MODEL,"status":"ok",
     }
     # eval-v3: surface parse_success_rate + flag judge_parse_starvation
-    n_calls = len(per_strip) * JUDGE_RUNS_PER_SAMPLE
+    n_calls = len(per_strip_scores) * JUDGE_RUNS_PER_SAMPLE
     parse_failures = judge_audit.get("judge_parse_failures", 0)
     parse_success_rate = (n_calls - parse_failures) / n_calls if n_calls else 0.0
     components["parse_success_rate"] = parse_success_rate
