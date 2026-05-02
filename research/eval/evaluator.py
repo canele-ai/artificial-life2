@@ -569,7 +569,9 @@ def _env_audit() -> dict:
     audit: dict[str,Any]={"python_version":sys.version.split()[0]}
     for pkg,key in [("jax","jax_version"),("jaxlib","jaxlib_version"),
                     ("anthropic","anthropic_sdk_version"),
-                    ("evosax","evosax_version")]:
+                    ("evosax","evosax_version"),
+                    ("torch","torch_version"),
+                    ("transformers","transformers_version")]:
         try: audit[key]=getattr(importlib.import_module(pkg),"__version__","?")
         except Exception: audit[key]="missing"
     try:
