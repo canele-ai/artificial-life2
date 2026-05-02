@@ -44,7 +44,12 @@ log = logging.getLogger("evaluator")
 # FROZEN CONSTANTS
 # ══════════════════════════════════════════════════════════════════════════════
 
-EVAL_VERSION = "eval-v2"
+EVAL_VERSION = "eval-v3"
+# eval-v3: surface judge parse_success_rate at the top level + flag
+# judge_parse_starvation when <50% of judge calls returned valid JSON
+# (milestone-3 finding: orbit 15 seed 1 had 21/48 parse failures and scored
+# +0.339; seeds 2/3 had 48/48 parse failures and silently collapsed to 0).
+JUDGE_PARSE_STARVATION_THRESHOLD = 0.5
 JUDGE_MODEL = "claude-sonnet-4-6"
 JUDGE_TEMP = 0.0
 JUDGE_MAX_TOKENS = 256
@@ -84,7 +89,7 @@ UNIFORM_TIER_RANGE_MIN = 0.02
 RUBRIC_SHA256 = "9f2945d70ee3259d8f4a513105b54e0a55cc9dffba88a349aa3087a0ec9ad460"
 
 # Guard 10 — baseline SHA; None until campaign freeze at Phase 2.5.
-BASELINE_SHA256: str | None = "a72d63e0b0707dbdde958b0cda1aa8793414c7d30f58212fb73fc40603515f68"
+BASELINE_SHA256: str | None = "4ceff8103462df858d8a3e9f4437cf06b574225435fdbe81138ec4f44d27f6fd"
 # Guard 1 — rubric system prompt EMBEDDED (never read from repo in search container).
 RUBRIC_SYSTEM_PROMPT = (
     "You are a strict scientific rater evaluating artificial-life simulations.\n"
@@ -458,6 +463,17 @@ def aggregate(
         "rubric_sha":RUBRIC_SHA256,"baseline_sha":BASELINE_SHA256,
         "eval_version":EVAL_VERSION,"judge_version":JUDGE_MODEL,"status":"ok",
     }
+    # eval-v3: surface parse_success_rate + flag judge_parse_starvation
+    n_calls = len(per_strip) * JUDGE_RUNS_PER_SAMPLE
+    parse_failures = judge_audit.get("judge_parse_failures", 0)
+    parse_success_rate = (n_calls - parse_failures) / n_calls if n_calls else 0.0
+    components["parse_success_rate"] = parse_success_rate
+    if parse_success_rate < JUDGE_PARSE_STARVATION_THRESHOLD:
+        components["status"] = "judge_parse_starvation"
+        components["starvation_reason"] = (
+            f"only {parse_success_rate:.2%} of {n_calls} judge calls returned valid JSON; "
+            "metric is unreliable."
+        )
     return metric, per_seed_scalars, components
 
 

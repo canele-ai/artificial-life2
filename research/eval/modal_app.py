@@ -31,6 +31,9 @@ _FLAX_VER = "0.10.2"
 _SCIPY_VER = "1.13.1"
 _ANTHROPIC_VER = "0.96.0"
 _EVOSAX_VER = "0.1.6"
+# eval-v3: torch added to search_image so orbit-12-class (real DINOv2 / real
+# pretrained-FM) hypotheses can run instead of crashing on ModuleNotFoundError.
+_TORCH_VER = "2.5.1"
 
 # ── Modal Volumes (pre-populated at campaign bootstrap) ──────────────────────
 hf_cache_vol = modal.Volume.from_name("hf-cache", create_if_missing=True)
@@ -50,6 +53,7 @@ search_image = (
         f"flax=={_FLAX_VER}",
         f"scipy=={_SCIPY_VER}",
         f"evosax=={_EVOSAX_VER}",
+        f"torch=={_TORCH_VER}",
         extra_options=(
             "--find-links "
             "https://storage.googleapis.com/jax-releases/jax_cuda_releases.html"
