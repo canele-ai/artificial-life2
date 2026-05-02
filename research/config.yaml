@@ -2,7 +2,7 @@
 # Per-session overrides via RE_* env vars (e.g. RE_PARALLEL_AGENTS=2)
 
 # Plugin provenance — set by /init, updated by /sync
-plugin_version: "0bcd683"
+plugin_version: "b54a30f"
 plugin_source: "local:/Users/wujiewang/code/git-evolve"
 
 metric:

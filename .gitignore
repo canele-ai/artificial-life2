@@ -1,39 +1,136 @@
+# git-evolve standard .gitignore (copied by /init step 0.5 and by
+# tests/run-benchmark.sh). Keep this comprehensive — orbit-agents work
+# in isolated worktrees and will happily commit any noise left behind
+# by their tools if it's not excluded here.
+
+# ---------------------------------------------------------------------
 # Cache (rebuildable, deletable)
+# ---------------------------------------------------------------------
 .re/cache/
 
+# ---------------------------------------------------------------------
 # Python
+# ---------------------------------------------------------------------
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
 .venv/
+venv/
+env/
+build/
+dist/
+*.egg-info/
+*.egg
+# Testing + linting
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.tox/
+.nox/
+.hypothesis/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
 
+# ---------------------------------------------------------------------
 # Node
+# ---------------------------------------------------------------------
 node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
 
-# OS
+# ---------------------------------------------------------------------
+# OS noise
+# ---------------------------------------------------------------------
 .DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
 Thumbs.db
+Desktop.ini
 
-# Claude Code / plugins
-.omc/
-.claude/worktrees/
-
-# Worktrees (local, per-machine)
-.worktrees/
-
-# Research artifacts (binary, large)
-*.npy
-*.pt
-*.h5
-*.pkl
-*.ckpt
-*.safetensors
-
-# IDE
+# ---------------------------------------------------------------------
+# Editors & IDEs
+# ---------------------------------------------------------------------
 .idea/
 .vscode/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+*.sublime-workspace
+*.sublime-project
 
+# ---------------------------------------------------------------------
+# Claude Code / plugins / tools
+# ---------------------------------------------------------------------
+.omc/
+.claude/worktrees/
+.claude/logs/
+# Worktrees (local, per-machine)
+.worktrees/
+# GitHub-sourced plugin install (persistent clone, machine-local)
+.plugin/
+
+# ---------------------------------------------------------------------
+# Research artifacts — large binary outputs
+# (reproducible from solution.py + evaluator; not tracked to keep repo slim)
+# ---------------------------------------------------------------------
+*.npy
+*.npz
+*.pt
+*.pth
+*.h5
+*.hdf5
+*.pkl
+*.pickle
+*.ckpt
+*.safetensors
+*.onnx
+*.tflite
+*.parquet
+*.feather
+*.arrow
+*.msgpack
+*.joblib
+
+# Modal caches
+.modal-cache/
+
+# Hugging Face + other ML frameworks
+.huggingface/
+wandb/
+mlruns/
+lightning_logs/
+tensorboard_logs/
+
+# ---------------------------------------------------------------------
 # Eval checkpoints (ephemeral, machine-local)
+# ---------------------------------------------------------------------
 .checkpoint
 
-# Lock files (optional — remove this line if you want uv.lock tracked)
+# ---------------------------------------------------------------------
+# Lock files (optional — remove if you want them tracked)
+# ---------------------------------------------------------------------
 uv.lock
+
+# ---------------------------------------------------------------------
+# Orbit-local scratch
+# Anything explicitly named as scratch or under orbits/*/scratch/ is
+# by convention not part of the experiment — agents should regenerate
+# or delete before commit, but this is a safety net.
+# ---------------------------------------------------------------------
+orbits/*/scratch/
+scratch/
+*.tmp
+*.bak
+*.log

@@ -1,0 +1,13 @@
+{
+  "enabledPlugins": {
+    "git-evolve@local": true
+  },
+  "extraKnownMarketplaces": {
+    "local": {
+      "source": {
+        "source": "directory",
+        "path": "/Users/wujiewang/code/git-evolve"
+      }
+    }
+  }
+}
