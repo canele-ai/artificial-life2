@@ -1,4 +1,4 @@
-<!-- metric: lcf_judge_heldout target: null eval: eval-v2 -->
+<!-- metric: lcf_judge_heldout target: null eval: eval-v3 -->
 
 # Improve on ASAL: life-cycle-aware search for artificial life
 
@@ -173,24 +173,32 @@ provenance/quality signals around them have improved.
     (preprocessor_config.json missing); the real judge-oracle guard is the
     anthropic secret being judge-only, plus subprocess SIGKILL.
 
-### Open eval-v3 candidates (NOT yet frozen)
+- **eval-v3** (frozen 2026-04-20, commit `65090f9`) — additive quality
+  signals; no metric-semantics change, no re-anchor:
+  - **`status="judge_parse_starvation"`** when `parse_success_rate < 0.5`.
+    Closes the milestone-3 silent-collapse failure mode where 48/48 judge
+    parse failures produced a 0-LCF metric without flagging the cause.
+  - **`parse_success_rate`** surfaced as a top-level field in
+    `METRIC_COMPONENTS`. Future leaderboard rendering can downweight
+    orbits whose judge-success rate is degraded.
+  - **`torch==2.5.1` added to Modal `search_image`.** Unblocks orbit-12
+    family (pretrained-FM swap; previously honest-crashed on
+    ModuleNotFoundError). Image rebuilds on next dispatch.
+  - Baseline value unchanged (still 0.1185, HONEST_ANCHOR);
+    `BASELINE_SHA256 → 4ceff810…` reflects metadata-only `eval_version`
+    field bump.
 
-Discovered at milestone 3 cross-validation. Tracked here so the spec
-records the work-in-progress contract:
+### Open eval-v4 candidates (NOT yet frozen)
 
-- **Judge parse-failure handling.** `judge_parse_failures` is captured in
-  `METRIC_COMPONENTS` but never surfaced in the leaderboard. Orbit 15
-  scored +0.339 at seed 1 (parse_failures=21/48) and 0.0 at seeds 2 and 3
-  (parse_failures=48/48). The metric collapsed silently to `−baseline`
-  rather than flagging "judge starved on this input class". Proposal:
-  emit `status="judge_parse_starvation"` when `parse_success_rate < 0.5`;
-  surface `parse_success_rate` as a top-level quality signal next to METRIC.
+Tracked here so the spec records the work-in-progress contract.
+
 - **Multi-seed contract.** Single-seed metrics are provisional; treat
   `best_orbit` as null until ≥3 seeds confirm. (Open framework issue:
-  https://github.com/canele-ai/git-evolve/issues/9.)
-- **`torch` in Modal `search_image`.** Orbit 12 honestly crashed under
-  eval-v2 because torch isn't in the search image. Adding it costs ~2 GB
-  of image bytes but unlocks pretrained-FM swap orbits.
+  https://github.com/canele-ai/git-evolve/issues/9.) Costs ~3× Modal
+  spend per orbit but eliminates the orbit-15-style false-positive class.
 - **Algorithm-provenance assertion.** Solutions claiming algorithm `X` whose
   `search_trace["algorithm"]` references a module not in `env_audit`
   should be auto-flagged as `algorithm_provenance_warning`.
+- **Re-anchor under multi-seed real CMA-ES.** Once the multi-seed
+  contract lands, re-freeze the baseline against actual Sep-CMA-ES
+  output (not random search). Estimated cost ~$30-50 Modal.
