@@ -1,9 +1,11 @@
 {
   "campaign": {
     "title": "Improve on ASAL: life-cycle-aware search for artificial life",
-    "problem": "# Improve on ASAL: life-cycle-aware search for artificial life\n\n## Problem Statement\n\nASAL (Kumar et al. 2024, arXiv:2412.17799) reframed artificial-life search as\nfoundation-model-guided optimization: embed a simulation's rollout frames in a\nfrozen vision-language model (CLIP ViT-B/32), then optimize one of three scalar\nobjectives \u2014 **supervised target** (match a text prompt), **open-endedness**\n(trajectory never repeats in FM space), or **illumination** (population-level\ndiversity) \u2014 with Sep-CMA-ES or a custom novelty archive. ASAL covers Boids,\nLenia, Particle Life, Particle Lenia, NCA, and Game of Life.\n\nWe aim to **improve on ASAL along three orthogonal axes** and produce results +\nvisualizations of the same character (species atlases, life-cycle GIFs,\nillumination maps, cross-method comparisons):\n\n1. **Substrate gap:** add Flow-Lenia (Plantec et al. 2023, arXiv:2212.07906),\n   the mass-conserving Lenia variant that uniquely enables multi-species\n   coexistence, soft self-boundaries, and intrinsic evolution within one world.\n   ASAL did not cover Flow-Lenia.\n\n2. **Foundation-model gap:** ASAL uses per-frame CLIP ViT-B/32. Investigate\n   whether stronger image FMs (DINOv2, SigLIP-2) or temporal FMs (V-JEPA,\n   VideoMAE, InternVideo2) yield a richer search signal \u2014 especially for\n   behaviors whose essence is temporal (motion, development, reproduction).\n\n3. **Objective gap:** ASAL's open-endedness rewards any trajectory that keeps\n   moving in FM space \u2014 including chaotic noise. Replace with **life-cycle\n   fidelity:** given a fixed bank of ordered prompt-sequences describing life\n   stages (e.g. *\"seed\" \u2192 \"developing organism\" \u2192 \"mature self-sustaining\n   creature\" \u2192 \"reproducing creature\"*), optimize for simulations whose rollout\n   matches the ordered trajectory under the chosen FM. Structured novelty, not\n   any novelty.\n\nThe research output is both quantitative (single-scalar leaderboard metric, see\nbelow) and qualitative (GIFs, species atlases, perturbation-recovery videos,\nmulti-species ecology visualizations, cross-substrate comparisons).\n\n## Solution Interface\n\nA candidate \"solution\" is a search procedure that, given a fixed substrate\n(Lenia / Flow-Lenia / Particle Lenia / NCA) and fixed FM, discovers a set of\nsimulation parameters whose rollouts score well on the life-cycle fidelity\nmetric.\n\nConcretely, a solution is a Python module implementing:\n\n```python\ndef search(substrate_name: str,\n           fm_name: str,\n           prompt_bank: list[list[str]],   # life-cycle prompt sequences\n           budget: dict,                    # {\"generations\": int, \"pop_size\": int}\n           rng: jax.Array) -> dict:\n    \"\"\"\n    Returns:\n      {\n        \"best_params\": jax.Array,          # flat params of best simulation\n        \"best_rollout\": jax.Array,         # [T, H, W, C] frames of best\n        \"archive\": list[dict],             # top-K solutions for illumination\n        \"trace\": dict,                     # per-generation metric curves\n      }\n    \"\"\"\n```\n\nCandidates may use any search algorithm (Sep-CMA-ES baseline, custom novelty\narchive \u00e0 la ASAL, QDax MAP-Elites, AURORA, hierarchical QD, learned proposal\ndistributions, etc.). They must consume the same substrate and FM interfaces\n(adapted from the ASAL repo; Flow-Lenia adapter to be written in Phase 2).\n\n## Success Metric\n\n**Life-cycle fidelity score** (single scalar, direction = maximize).\n\nOn a fixed bank of K life-cycle prompt sequences (e.g. 5 sequences \u00d7 5 prompts\neach), for each sequence:\n1. Run the discovered simulation for T steps, sample 5 equally-spaced frames.\n2. Embed frames with the chosen FM \u2192 `z_i`, embed prompts \u2192 `z_txt_i`.\n3. Compute **softmax-target score** (ASAL's collapse-resistant variant):\n   symmetric cross-entropy on `softmax(z_txt @ z_img.T / \u03c4)`.\n\nFinal score = mean over K sequences, minus an ASAL-OE baseline computed on a\nheld-out seed pool to anchor zero. Range: roughly `[0, 1]` in practice;\ndirection `maximize`.\n\n**Why not use raw ASAL-OE or supervised-target score alone:** raw OE is gamed\nby chaotic trajectories; raw supervised-target (ASAL's existing metric) only\nscores static matching, not ordered temporal trajectories. Life-cycle fidelity\nis the minimal extension that (a) stays a single differentiable scalar, (b) is\nevaluable from the raw rollout tensor with a frozen FM, and (c) rewards\nstructured temporal behavior.\n\n**Target:** no hard target set; this is an exploration-first campaign. We will\nmeasure improvement relative to an ASAL-exact baseline (Sep-CMA-ES with CLIP\nViT-B/32 optimizing supervised target, scored on our life-cycle prompts).\n\n## Known Approaches\n\nStarting points to inherit / adapt / beat:\n\n- **ASAL** (arXiv:2412.17799, github.com/SakanaAI/asal): JAX-native substrates,\n  `asal_metrics.py` (60 LOC, directly reusable), Sep-CMA-ES via evosax, custom\n  novelty-archive GA. This is the baseline to beat.\n- **Flow-Lenia** (arXiv:2212.07906, github.com/erwanplantec/FlowLenia): JAX +\n  Equinox. Needs a ~200-LOC adapter to plug into the ASAL substrate interface.\n- **Leniabreeder** (Faldor & Cully, ALIFE 2024): QDax-based Lenia + MAP-Elites\n  + AURORA. The canonical QD-for-Lenia reference.\n- **QDax** (github.com/adaptive-intelligent-robotics/QDax): JAX-native QD\n  library, actively maintained.\n- **Foundation models:** HuggingFace `FlaxCLIPModel` (CLIP), `FlaxDinov2Model`\n  (DINOv2). SigLIP via big_vision (weekend of integration work). V-JEPA /\n  VideoMAE require PyTorch + JAX interop.\n- **Classic metrics survey:** Bedau\u2013Packard evolutionary activity, Channon's\n  unbounded-evolution criteria, MODES toolbox \u2014 all require genealogy\n  instrumentation; deferred to later campaigns.\n\n## Visualization Targets\n\nThe campaign outputs are as much the figures as the metric. Required per\npromising orbit:\n\n- **Species atlas GIF:** grid of discovered patterns running in parallel.\n- **Life-cycle GIF:** single pattern from seed through mature dynamics.\n- **Perturbation-recovery GIF:** pattern \u2192 damage \u2192 regeneration timeline.\n- **Multi-species ecology GIF** (Flow-Lenia only): multiple patterns\n  interacting in a shared world.\n- **Illumination map:** 2D projection of discovered parameter space, colored\n  by FM-embedding descriptor.\n- **Comparison GIF:** same initial conditions across substrates (Lenia vs.\n  Flow-Lenia vs. NCA) or across FMs (CLIP vs. DINOv2 vs. V-JEPA).\n\n## Open Questions (to be resolved by Phase 1.5 refinement panel)\n\n1. Exact formula for life-cycle fidelity: softmax-target only, or combined\n   with an OE penalty? How to weight?\n2. Fixed prompt bank vs. evolving prompt bank? Human-written vs. LLM-generated?\n3. What counts as the \"held-out ASAL baseline\" anchor \u2014 is it a fixed score\n   frozen at init, or re-computed per orbit?\n4. Unit of comparison across orbits: per-generation budget equalized, or\n   wall-clock equalized, or GPU-hour equalized?\n5. Does a single-scalar life-cycle score suffice, or do we need a\n   multi-objective Pareto front (e.g. fidelity \u00d7 robustness \u00d7 diversity)?\n",
-    "eval_version": "eval-v2",
+    "problem": "<!-- metric: lcf_judge_heldout target: null eval: eval-v3 -->\n\n# Improve on ASAL: life-cycle-aware search for artificial life\n\n## Problem Statement\n\nASAL (Kumar et al. 2024, arXiv:2412.17799) reframed artificial-life search as\nfoundation-model-guided optimization: embed a simulation's rollout frames in a\nfrozen vision-language model (CLIP ViT-B/32), then optimize one of three scalar\nobjectives \u2014 **supervised target** (match a text prompt), **open-endedness**\n(trajectory never repeats in FM space), or **illumination** (population-level\ndiversity) \u2014 with Sep-CMA-ES or a custom novelty archive. ASAL covers Boids,\nLenia, Particle Life, Particle Lenia, NCA, and Game of Life.\n\nWe aim to **improve on ASAL along three orthogonal axes** and produce results +\nvisualizations of the same character (species atlases, life-cycle GIFs,\nillumination maps, cross-method comparisons):\n\n1. **Substrate gap:** add Flow-Lenia (Plantec et al. 2023, arXiv:2212.07906),\n   the mass-conserving Lenia variant that uniquely enables multi-species\n   coexistence, soft self-boundaries, and intrinsic evolution within one world.\n   ASAL did not cover Flow-Lenia.\n\n2. **Foundation-model gap:** ASAL uses per-frame CLIP ViT-B/32. Investigate\n   whether stronger image FMs (DINOv2, SigLIP-2) or temporal FMs (V-JEPA,\n   VideoMAE, InternVideo2) yield a richer search signal \u2014 especially for\n   behaviors whose essence is temporal (motion, development, reproduction).\n\n3. **Objective gap:** ASAL's open-endedness rewards any trajectory that keeps\n   moving in FM space \u2014 including chaotic noise. Replace with **life-cycle\n   fidelity:** given a fixed bank of ordered prompt-sequences describing life\n   stages (e.g. *\"seed\" \u2192 \"developing organism\" \u2192 \"mature self-sustaining\n   creature\" \u2192 \"reproducing creature\"*), optimize for simulations whose rollout\n   matches the ordered trajectory under the chosen FM. Structured novelty, not\n   any novelty.\n\nThe research output is both quantitative (single-scalar leaderboard metric, see\nbelow) and qualitative (GIFs, species atlases, perturbation-recovery videos,\nmulti-species ecology visualizations, cross-substrate comparisons).\n\n## Solution Interface\n\nA candidate \"solution\" is a search procedure that, given a fixed substrate\n(Lenia / Flow-Lenia / Particle Lenia / NCA) and fixed FM, discovers a set of\nsimulation parameters whose rollouts score well on the life-cycle fidelity\nmetric.\n\nConcretely, a solution is a Python module implementing:\n\n```python\ndef search(substrate_name: str,\n           fm_name: str,\n           prompt_bank: list[list[str]],   # life-cycle prompt sequences\n           budget: dict,                    # {\"generations\": int, \"pop_size\": int}\n           rng: jax.Array) -> dict:\n    \"\"\"\n    Returns:\n      {\n        \"best_params\": jax.Array,          # flat params of best simulation\n        \"best_rollout\": jax.Array,         # [T, H, W, C] frames of best\n        \"archive\": list[dict],             # top-K solutions for illumination\n        \"trace\": dict,                     # per-generation metric curves\n      }\n    \"\"\"\n```\n\nCandidates may use any search algorithm (Sep-CMA-ES baseline, custom novelty\narchive \u00e0 la ASAL, QDax MAP-Elites, AURORA, hierarchical QD, learned proposal\ndistributions, etc.). They must consume the same substrate and FM interfaces\n(adapted from the ASAL repo; Flow-Lenia adapter to be written in Phase 2).\n\n## Success Metric\n\n**Life-cycle fidelity score** (single scalar, direction = maximize).\n\nOn a fixed bank of K life-cycle prompt sequences (e.g. 5 sequences \u00d7 5 prompts\neach), for each sequence:\n1. Run the discovered simulation for T steps, sample 5 equally-spaced frames.\n2. Embed frames with the chosen FM \u2192 `z_i`, embed prompts \u2192 `z_txt_i`.\n3. Compute **softmax-target score** (ASAL's collapse-resistant variant):\n   symmetric cross-entropy on `softmax(z_txt @ z_img.T / \u03c4)`.\n\nFinal score = mean over K sequences, minus an ASAL-OE baseline computed on a\nheld-out seed pool to anchor zero. Range: roughly `[0, 1]` in practice;\ndirection `maximize`.\n\n**Why not use raw ASAL-OE or supervised-target score alone:** raw OE is gamed\nby chaotic trajectories; raw supervised-target (ASAL's existing metric) only\nscores static matching, not ordered temporal trajectories. Life-cycle fidelity\nis the minimal extension that (a) stays a single differentiable scalar, (b) is\nevaluable from the raw rollout tensor with a frozen FM, and (c) rewards\nstructured temporal behavior.\n\n**Target:** no hard target set; this is an exploration-first campaign. We will\nmeasure improvement relative to an ASAL-exact baseline (Sep-CMA-ES with CLIP\nViT-B/32 optimizing supervised target, scored on our life-cycle prompts).\n\n## Known Approaches\n\nStarting points to inherit / adapt / beat:\n\n- **ASAL** (arXiv:2412.17799, github.com/SakanaAI/asal): JAX-native substrates,\n  `asal_metrics.py` (60 LOC, directly reusable), Sep-CMA-ES via evosax, custom\n  novelty-archive GA. This is the baseline to beat.\n- **Flow-Lenia** (arXiv:2212.07906, github.com/erwanplantec/FlowLenia): JAX +\n  Equinox. Needs a ~200-LOC adapter to plug into the ASAL substrate interface.\n- **Leniabreeder** (Faldor & Cully, ALIFE 2024): QDax-based Lenia + MAP-Elites\n  + AURORA. The canonical QD-for-Lenia reference.\n- **QDax** (github.com/adaptive-intelligent-robotics/QDax): JAX-native QD\n  library, actively maintained.\n- **Foundation models:** HuggingFace `FlaxCLIPModel` (CLIP), `FlaxDinov2Model`\n  (DINOv2). SigLIP via big_vision (weekend of integration work). V-JEPA /\n  VideoMAE require PyTorch + JAX interop.\n- **Classic metrics survey:** Bedau\u2013Packard evolutionary activity, Channon's\n  unbounded-evolution criteria, MODES toolbox \u2014 all require genealogy\n  instrumentation; deferred to later campaigns.\n\n## Visualization Targets\n\nThe campaign outputs are as much the figures as the metric. Required per\npromising orbit:\n\n- **Species atlas GIF:** grid of discovered patterns running in parallel.\n- **Life-cycle GIF:** single pattern from seed through mature dynamics.\n- **Perturbation-recovery GIF:** pattern \u2192 damage \u2192 regeneration timeline.\n- **Multi-species ecology GIF** (Flow-Lenia only): multiple patterns\n  interacting in a shared world.\n- **Illumination map:** 2D projection of discovered parameter space, colored\n  by FM-embedding descriptor.\n- **Comparison GIF:** same initial conditions across substrates (Lenia vs.\n  Flow-Lenia vs. NCA) or across FMs (CLIP vs. DINOv2 vs. V-JEPA).\n\n## Open Questions (to be resolved by Phase 1.5 refinement panel)\n\n1. Exact formula for life-cycle fidelity: softmax-target only, or combined\n   with an OE penalty? How to weight?\n2. Fixed prompt bank vs. evolving prompt bank? Human-written vs. LLM-generated?\n3. What counts as the \"held-out ASAL baseline\" anchor \u2014 is it a fixed score\n   frozen at init, or re-computed per orbit?\n4. Unit of comparison across orbits: per-generation budget equalized, or\n   wall-clock equalized, or GPU-hour equalized?\n5. Does a single-scalar life-cycle score suffice, or do we need a\n   multi-objective Pareto front (e.g. fidelity \u00d7 robustness \u00d7 diversity)?\n\n## Metric history\n\nEval has been re-frozen once during this campaign. Each tag below records what\nchanged and why; metric semantics carry forward across versions but the\nprovenance/quality signals around them have improved.\n\n- **eval-v1** (frozen 2026-04-18) \u2014 initial freeze. Inner-loop CLIP-OE\n  + Sep-CMA-ES (`good.py`) + 5-tier VLM judge (Claude Sonnet 4.6) +\n  geomean-then-trimmed-mean over 16 held-out seeds. Baseline anchored at\n  LCF_judge=0.1185 (`baseline_score.json`, SHA `15c5b5d0\u2026`).\n\n- **eval-v2** (frozen 2026-04-19, commit `7fbd935` + infra fix `08e6131`) \u2014\n  metric semantics unchanged (still `lcf_judge_heldout`); honesty fixes\n  surfaced at milestone 1's cross-orbit synthesis:\n  - **`evosax==0.1.6` added to Modal `search_image`.** At eval-v1 it was absent;\n    `good.py`'s silent `try/except ImportError` fallback meant every orbit\n    claiming Sep-CMA-ES actually ran random search wearing a CMA-ES label.\n    The frozen eval-v1 baseline 0.1185 was honest random-search + CLIP-OE,\n    just mislabeled. eval-v2 keeps the same numerical anchor (same bytes)\n    and updates metadata to HONEST_ANCHOR. BASELINE_SHA256 bumped to\n    `a72d63e0\u2026`.\n  - **`good.py` made fail-loud.** Removed the `ImportError` fallback;\n    a missing dep now crashes honestly instead of silently degrading.\n  - **`evosax_version` captured in `env_audit`.** Provenance signal for\n    a future Guard 11 (algorithm-provenance check); search_trace claims\n    can be cross-checked against actually-resolved imports.\n  - **`block_network=True` removed from `search_container`.** Defense-in-depth\n    that broke legitimate HF cache resolution after the image rebuild\n    (preprocessor_config.json missing); the real judge-oracle guard is the\n    anthropic secret being judge-only, plus subprocess SIGKILL.\n\n- **eval-v3** (frozen 2026-04-20, commit `65090f9`) \u2014 additive quality\n  signals; no metric-semantics change, no re-anchor:\n  - **`status=\"judge_parse_starvation\"`** when `parse_success_rate < 0.5`.\n    Closes the milestone-3 silent-collapse failure mode where 48/48 judge\n    parse failures produced a 0-LCF metric without flagging the cause.\n  - **`parse_success_rate`** surfaced as a top-level field in\n    `METRIC_COMPONENTS`. Future leaderboard rendering can downweight\n    orbits whose judge-success rate is degraded.\n  - **`torch==2.5.1` added to Modal `search_image`.** Unblocks orbit-12\n    family (pretrained-FM swap; previously honest-crashed on\n    ModuleNotFoundError). Image rebuilds on next dispatch.\n  - Baseline value unchanged (still 0.1185, HONEST_ANCHOR);\n    `BASELINE_SHA256 \u2192 4ceff810\u2026` reflects metadata-only `eval_version`\n    field bump.\n\n### Open eval-v4 candidates (NOT yet frozen)\n\nTracked here so the spec records the work-in-progress contract.\n\n- **Multi-seed contract.** Single-seed metrics are provisional; treat\n  `best_orbit` as null until \u22653 seeds confirm. (Open framework issue:\n  https://github.com/canele-ai/git-evolve/issues/9.) Costs ~3\u00d7 Modal\n  spend per orbit but eliminates the orbit-15-style false-positive class.\n- **Algorithm-provenance assertion.** Solutions claiming algorithm `X` whose\n  `search_trace[\"algorithm\"]` references a module not in `env_audit`\n  should be auto-flagged as `algorithm_provenance_warning`.\n- **Re-anchor under multi-seed real CMA-ES.** Once the multi-seed\n  contract lands, re-freeze the baseline against actual Sep-CMA-ES\n  output (not random search). Estimated cost ~$30-50 Modal.\n",
+    "eval_version": "eval-v3",
     "repo": "canele-ai/artificial-life2",
+    "search_seeds_required": 1,
+    "aggregation": "mean",
     "metric_description": "lcf_judge_heldout (maximize)",
     "eval_methodology": {
       "summary": "> Frozen at eval-v1. Describes WHAT the evaluator measures and HOW \u2014\n> the research contract that all orbits must satisfy.\n> For the full formal spec, see `problem_spec.md`. For the judge rubric,\n> see `judge/rubric.md`.",
@@ -23,13 +25,39 @@
       ],
       "baseline": "random_search_30min: 0.15, asal_sep_cma_es: 0.3",
       "params": "timeout=2400s seeds=16 gpu=A100",
-      "version": "eval-v2"
+      "version": "eval-v3"
     },
-    "teaser_image": "https://raw.githubusercontent.com/canele-ai/artificial-life2/main/research/figures/teaser.png",
+    "metric_header": {
+      "metric": "lcf_judge_heldout",
+      "target": "null",
+      "eval": "eval-v3"
+    },
+    "teaser_image": "./research/figures/teaser.png",
+    "eval_schematic": "./research/eval/figures/eval_schematic.png",
     "best": {
       "orbit": "15-flow-lenia-retry",
       "metric": 0.339329,
-      "direction": "maximize"
+      "direction": "maximize",
+      "provisional": true
+    },
+    "eval_versions": [
+      {
+        "id": "eval-v1"
+      },
+      {
+        "id": "eval-v2"
+      }
+    ],
+    "current_eval_version": "eval-v2",
+    "best_by_eval": {
+      "eval-v1": {
+        "orbit": "05-dinov2-oe",
+        "metric": 0.293939
+      },
+      "eval-v2": {
+        "orbit": "15-flow-lenia-retry",
+        "metric": 0.339329
+      }
     },
     "timeline": []
   },
@@ -44,15 +72,15 @@
       "log_url": "https://github.com/canele-ai/artificial-life2/blob/orbit/01-asal-lifecycle-prompts/orbits/01-asal-lifecycle-prompts/log.md",
       "figures": [
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/01-asal-lifecycle-prompts/orbits/01-asal-lifecycle-prompts/figures/behavior.gif",
+          "url": "./orbits/01-asal-lifecycle-prompts/figures/behavior.gif",
           "caption": "behavior.gif"
         },
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/01-asal-lifecycle-prompts/orbits/01-asal-lifecycle-prompts/figures/narrative.png",
+          "url": "./orbits/01-asal-lifecycle-prompts/figures/narrative.png",
           "caption": "narrative.png"
         },
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/01-asal-lifecycle-prompts/orbits/01-asal-lifecycle-prompts/figures/results.png",
+          "url": "./orbits/01-asal-lifecycle-prompts/figures/results.png",
           "caption": "results.png"
         }
       ],
@@ -76,7 +104,14 @@
           "images": []
         }
       ],
-      "eval_version": "eval-v1"
+      "per_seed": [],
+      "provisional": true,
+      "quality_signals": {},
+      "env_audit": {},
+      "eval_version": "eval-v1",
+      "metrics": {
+        "eval-v1": -0.016769
+      }
     },
     {
       "name": "02-asal-mature-organism",
@@ -101,7 +136,14 @@
           "images": []
         }
       ],
-      "eval_version": "eval-v1"
+      "per_seed": [],
+      "provisional": true,
+      "quality_signals": {},
+      "env_audit": {},
+      "eval_version": "eval-v1",
+      "metrics": {
+        "eval-v1": 0.27925
+      }
     },
     {
       "name": "03-flow-lenia-clip-oe",
@@ -113,19 +155,19 @@
       "log_url": "https://github.com/canele-ai/artificial-life2/blob/orbit/03-flow-lenia-clip-oe/orbits/03-flow-lenia-clip-oe/log.md",
       "figures": [
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/03-flow-lenia-clip-oe/orbits/03-flow-lenia-clip-oe/figures/behavior.gif",
+          "url": "./orbits/03-flow-lenia-clip-oe/figures/behavior.gif",
           "caption": "behavior.gif"
         },
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/03-flow-lenia-clip-oe/orbits/03-flow-lenia-clip-oe/figures/narrative.png",
+          "url": "./orbits/03-flow-lenia-clip-oe/figures/narrative.png",
           "caption": "narrative.png"
         },
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/03-flow-lenia-clip-oe/orbits/03-flow-lenia-clip-oe/figures/results.png",
+          "url": "./orbits/03-flow-lenia-clip-oe/figures/results.png",
           "caption": "results.png"
         },
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/03-flow-lenia-clip-oe/orbits/03-flow-lenia-clip-oe/figures/schematic.png",
+          "url": "./orbits/03-flow-lenia-clip-oe/figures/schematic.png",
           "caption": "schematic.png"
         }
       ],
@@ -153,7 +195,14 @@
           "images": []
         }
       ],
-      "eval_version": "eval-v1"
+      "per_seed": [],
+      "provisional": true,
+      "quality_signals": {},
+      "env_audit": {},
+      "eval_version": "eval-v1",
+      "metrics": {
+        "eval-v1": 0.0
+      }
     },
     {
       "name": "04-random-search-dense",
@@ -165,15 +214,15 @@
       "log_url": "https://github.com/canele-ai/artificial-life2/blob/orbit/04-random-search-dense/orbits/04-random-search-dense/log.md",
       "figures": [
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/04-random-search-dense/orbits/04-random-search-dense/figures/behavior.gif",
+          "url": "./orbits/04-random-search-dense/figures/behavior.gif",
           "caption": "behavior.gif"
         },
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/04-random-search-dense/orbits/04-random-search-dense/figures/narrative.png",
+          "url": "./orbits/04-random-search-dense/figures/narrative.png",
           "caption": "narrative.png"
         },
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/04-random-search-dense/orbits/04-random-search-dense/figures/results.png",
+          "url": "./orbits/04-random-search-dense/figures/results.png",
           "caption": "results.png"
         }
       ],
@@ -200,7 +249,14 @@
           "images": []
         }
       ],
-      "eval_version": "eval-v1"
+      "per_seed": [],
+      "provisional": true,
+      "quality_signals": {},
+      "env_audit": {},
+      "eval_version": "eval-v1",
+      "metrics": {
+        "eval-v1": 0.232577
+      }
     },
     {
       "name": "05-dinov2-oe",
@@ -212,19 +268,19 @@
       "log_url": "https://github.com/canele-ai/artificial-life2/blob/orbit/05-dinov2-oe/orbits/05-dinov2-oe/log.md",
       "figures": [
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/05-dinov2-oe/orbits/05-dinov2-oe/figures/behavior.gif",
+          "url": "./orbits/05-dinov2-oe/figures/behavior.gif",
           "caption": "behavior.gif"
         },
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/05-dinov2-oe/orbits/05-dinov2-oe/figures/narrative.png",
+          "url": "./orbits/05-dinov2-oe/figures/narrative.png",
           "caption": "narrative.png"
         },
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/05-dinov2-oe/orbits/05-dinov2-oe/figures/oe_comparison.png",
+          "url": "./orbits/05-dinov2-oe/figures/oe_comparison.png",
           "caption": "oe_comparison.png"
         },
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/05-dinov2-oe/orbits/05-dinov2-oe/figures/results.png",
+          "url": "./orbits/05-dinov2-oe/figures/results.png",
           "caption": "results.png"
         }
       ],
@@ -242,7 +298,14 @@
           "images": []
         }
       ],
-      "eval_version": "eval-v1"
+      "per_seed": [],
+      "provisional": true,
+      "quality_signals": {},
+      "env_audit": {},
+      "eval_version": "eval-v1",
+      "metrics": {
+        "eval-v1": 0.293939
+      }
     },
     {
       "name": "06-real-cmaes-mature",
@@ -275,7 +338,14 @@
           "images": []
         }
       ],
-      "eval_version": "eval-v2"
+      "per_seed": [],
+      "provisional": true,
+      "quality_signals": {},
+      "env_audit": {},
+      "eval_version": "eval-v2",
+      "metrics": {
+        "eval-v2": 0.0
+      }
     },
     {
       "name": "07-real-cmaes-dinov2",
@@ -289,19 +359,19 @@
       "log_url": "https://github.com/canele-ai/artificial-life2/blob/orbit/07-real-cmaes-dinov2/orbits/07-real-cmaes-dinov2/log.md",
       "figures": [
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/07-real-cmaes-dinov2/orbits/07-real-cmaes-dinov2/figures/behavior.gif",
+          "url": "./orbits/07-real-cmaes-dinov2/figures/behavior.gif",
           "caption": "behavior.gif"
         },
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/07-real-cmaes-dinov2/orbits/07-real-cmaes-dinov2/figures/kernel_fix.png",
+          "url": "./orbits/07-real-cmaes-dinov2/figures/kernel_fix.png",
           "caption": "kernel_fix.png"
         },
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/07-real-cmaes-dinov2/orbits/07-real-cmaes-dinov2/figures/narrative.png",
+          "url": "./orbits/07-real-cmaes-dinov2/figures/narrative.png",
           "caption": "narrative.png"
         },
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/07-real-cmaes-dinov2/orbits/07-real-cmaes-dinov2/figures/results.png",
+          "url": "./orbits/07-real-cmaes-dinov2/figures/results.png",
           "caption": "results.png"
         }
       ],
@@ -329,7 +399,14 @@
           "images": []
         }
       ],
-      "eval_version": "eval-v2"
+      "per_seed": [],
+      "provisional": true,
+      "quality_signals": {},
+      "env_audit": {},
+      "eval_version": "eval-v2",
+      "metrics": {
+        "eval-v2": 0.319044
+      }
     },
     {
       "name": "08-random-search-pop64",
@@ -362,7 +439,14 @@
           "images": []
         }
       ],
-      "eval_version": "eval-v2"
+      "per_seed": [],
+      "provisional": true,
+      "quality_signals": {},
+      "env_audit": {},
+      "eval_version": "eval-v2",
+      "metrics": {
+        "eval-v2": 0.288986
+      }
     },
     {
       "name": "09-flow-lenia-real-cmaes",
@@ -376,19 +460,19 @@
       "log_url": "https://github.com/canele-ai/artificial-life2/blob/orbit/09-flow-lenia-real-cmaes/orbits/09-flow-lenia-real-cmaes/log.md",
       "figures": [
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/09-flow-lenia-real-cmaes/orbits/09-flow-lenia-real-cmaes/figures/behavior.gif",
+          "url": "./orbits/09-flow-lenia-real-cmaes/figures/behavior.gif",
           "caption": "behavior.gif"
         },
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/09-flow-lenia-real-cmaes/orbits/09-flow-lenia-real-cmaes/figures/narrative.png",
+          "url": "./orbits/09-flow-lenia-real-cmaes/figures/narrative.png",
           "caption": "narrative.png"
         },
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/09-flow-lenia-real-cmaes/orbits/09-flow-lenia-real-cmaes/figures/results.png",
+          "url": "./orbits/09-flow-lenia-real-cmaes/figures/results.png",
           "caption": "results.png"
         },
         {
-          "url": "https://raw.githubusercontent.com/canele-ai/artificial-life2/orbit/09-flow-lenia-real-cmaes/orbits/09-flow-lenia-real-cmaes/figures/schematic.png",
+          "url": "./orbits/09-flow-lenia-real-cmaes/figures/schematic.png",
           "caption": "schematic.png"
         }
       ],
@@ -416,7 +500,14 @@
           "images": []
         }
       ],
-      "eval_version": "eval-v2"
+      "per_seed": [],
+      "provisional": true,
+      "quality_signals": {},
+      "env_audit": {},
+      "eval_version": "eval-v2",
+      "metrics": {
+        "eval-v2": 0.0
+      }
     },
     {
       "name": "10-ensemble-clip-dinov2",
@@ -447,7 +538,14 @@
           "images": []
         }
       ],
-      "eval_version": "eval-v2"
+      "per_seed": [],
+      "provisional": true,
+      "quality_signals": {},
+      "env_audit": {},
+      "eval_version": "eval-v2",
+      "metrics": {
+        "eval-v2": 0.080433
+      }
     },
     {
       "name": "11-cmaes-dinov2-pop64-restarts",
@@ -474,7 +572,14 @@
           "images": []
         }
       ],
-      "eval_version": "eval-v2"
+      "per_seed": [],
+      "provisional": true,
+      "quality_signals": {},
+      "env_audit": {},
+      "eval_version": "eval-v2",
+      "metrics": {
+        "eval-v2": 0.246805
+      }
     },
     {
       "name": "12-real-dinov2-torch",
@@ -495,7 +600,14 @@
           "images": []
         }
       ],
-      "eval_version": "eval-v2"
+      "per_seed": [],
+      "provisional": true,
+      "quality_signals": {},
+      "env_audit": {},
+      "eval_version": "eval-v2",
+      "metrics": {
+        "eval-v2": 0.0
+      }
     },
     {
       "name": "13-ensemble-geomean-alpha-anneal",
@@ -522,7 +634,14 @@
           "images": []
         }
       ],
-      "eval_version": "eval-v2"
+      "per_seed": [],
+      "provisional": true,
+      "quality_signals": {},
+      "env_audit": {},
+      "eval_version": "eval-v2",
+      "metrics": {
+        "eval-v2": 0.012132
+      }
     },
     {
       "name": "14-cmaes-dinov2-pop128",
@@ -549,7 +668,14 @@
           "images": []
         }
       ],
-      "eval_version": "eval-v2"
+      "per_seed": [],
+      "provisional": true,
+      "quality_signals": {},
+      "env_audit": {},
+      "eval_version": "eval-v2",
+      "metrics": {
+        "eval-v2": 0.325451
+      }
     },
     {
       "name": "15-flow-lenia-retry",
@@ -576,7 +702,14 @@
           "images": []
         }
       ],
-      "eval_version": "eval-v2"
+      "per_seed": [],
+      "provisional": true,
+      "quality_signals": {},
+      "env_audit": {},
+      "eval_version": "eval-v2",
+      "metrics": {
+        "eval-v2": 0.339329
+      }
     },
     {
       "name": "16-flow-lenia-dinov2",
@@ -597,7 +730,14 @@
           "images": []
         }
       ],
-      "eval_version": "eval-v2"
+      "per_seed": [],
+      "provisional": true,
+      "quality_signals": {},
+      "env_audit": {},
+      "eval_version": "eval-v2",
+      "metrics": {
+        "eval-v2": -0.118516
+      }
     },
     {
       "name": "17-flow-lenia-multi-seed",
@@ -618,7 +758,14 @@
           "images": []
         }
       ],
-      "eval_version": "eval-v2"
+      "per_seed": [],
+      "provisional": true,
+      "quality_signals": {},
+      "env_audit": {},
+      "eval_version": "eval-v2",
+      "metrics": {
+        "eval-v2": -0.118516
+      }
     },
     {
       "name": "18-flow-lenia-clip-pop64",
@@ -639,7 +786,14 @@
           "images": []
         }
       ],
-      "eval_version": "eval-v2"
+      "per_seed": [],
+      "provisional": true,
+      "quality_signals": {},
+      "env_audit": {},
+      "eval_version": "eval-v2",
+      "metrics": {
+        "eval-v2": -0.118516
+      }
     }
   ]
 }
